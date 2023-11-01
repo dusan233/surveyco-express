@@ -1,12 +1,15 @@
 import { NextFunction, Request, Response } from "express";
-import { createQuiz } from "../domain/services";
+import { createQuiz, getSurvey, saveQuestion } from "../domain/services";
 import {
   CreateQuizData,
+  HttpStatusCode,
   MultiChoiceQuestion,
   Question,
   QuestionType,
+  SurveyParams,
 } from "../../../types/types";
 import prisma from "../../../prismaClient";
+import { AppError } from "../../../lib/errors";
 
 const createQuizHandler = async (
   req: Request<any, any, CreateQuizData>,
@@ -17,59 +20,53 @@ const createQuizHandler = async (
   return res.status(201).json(createdQuiz);
 };
 
+const getSurveyHandler = async (
+  req: Request<SurveyParams>,
+  res: Response,
+  next: NextFunction
+) => {
+  const surveyId = req.params.surveyId;
+  const userId = req.auth.userId;
+  const survey = await getSurvey(surveyId, true);
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  return res.status(200).json(survey);
+};
+
 const saveQuestionHandler = async (
   req: Request<{ quizId: string }, any, Question>,
   res: Response,
   next: NextFunction
 ) => {
   const quizId = req.params.quizId;
-  const { id: questionId, ...questionData } = req.body;
+  const userId = req.auth.userId;
+  const survey = await getSurvey(quizId);
 
-  const savedQuestion = await prisma.question.upsert({
-    include: {
-      options: true,
-    },
-    where: { id: questionId || "sq" },
-    update: {
-      description: questionData.question_description,
-      type: questionData.type,
-      options:
-        questionData.type !== QuestionType.textbox
-          ? {
-              deleteMany: {
-                id: {
-                  notIn: (questionData as MultiChoiceQuestion).options
-                    .filter((option) => option.id !== undefined)
-                    .map((option) => option.id!),
-                },
-              },
-              upsert: (questionData as MultiChoiceQuestion).options.map(
-                (option) => ({
-                  where: { id: option.id || "dlsl" },
-                  create: {
-                    description: option.description,
-                  },
-                  update: { description: option.description },
-                })
-              ),
-            }
-          : undefined,
-    },
-    create: {
-      description: questionData.question_description,
-      type: questionData.type,
-      quiz: { connect: { id: quizId } },
-      options:
-        questionData.type !== QuestionType.textbox
-          ? {
-              create: (questionData as MultiChoiceQuestion).options.map(
-                (option) => ({ description: option.description })
-              ),
-            }
-          : undefined,
-    },
-  });
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const savedQuestion = await saveQuestion(req.body, quizId);
   return res.status(201).json(savedQuestion);
 };
 
-export default { createQuizHandler, saveQuestionHandler };
+export default { createQuizHandler, saveQuestionHandler, getSurveyHandler };

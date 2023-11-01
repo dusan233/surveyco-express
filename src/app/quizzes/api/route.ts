@@ -10,6 +10,12 @@ import quizController from "./controller";
 
 const router = express.Router();
 
+router.get(
+  "/:surveyId",
+  ClerkExpressRequireAuth(),
+  asyncHandler(quizController.getSurveyHandler)
+);
+
 router.post(
   "/create-quiz",
   ClerkExpressRequireAuth(),

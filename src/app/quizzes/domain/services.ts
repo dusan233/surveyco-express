@@ -20,8 +20,16 @@ export const createQuiz = async (userId: string, data: CreateQuizData) => {
   return newQuiz;
 };
 
-export const getQuiz = async (quizId: string) => {
-  const quiz = await prisma.quiz.findUnique({ where: { id: quizId } });
+export const getSurvey = async (
+  surveyId: string,
+  includeQuestions: boolean = false
+) => {
+  const quiz = await prisma.quiz.findUnique({
+    where: { id: surveyId },
+    include: includeQuestions
+      ? { questions: { include: { options: true }, take: 30 } }
+      : null,
+  });
 
   return quiz;
 };

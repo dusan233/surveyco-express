@@ -2,6 +2,11 @@ export interface CreateQuizData {
   title: string;
   category: string;
 }
+
+export interface SurveyParams {
+  surveyId: string;
+}
+
 export interface QuestionBase {
   id?: string;
   type: QuestionType;
