@@ -43,7 +43,7 @@ export const saveQuestion = async (data: Question, quizId: string) => {
     },
     where: { id: questionId || "sq" },
     update: {
-      description: questionData.question_description,
+      description: questionData.description,
       type: questionData.type,
       options:
         questionData.type !== QuestionType.textbox
@@ -68,7 +68,7 @@ export const saveQuestion = async (data: Question, quizId: string) => {
           : undefined,
     },
     create: {
-      description: questionData.question_description,
+      description: questionData.description,
       type: questionData.type,
       quiz: { connect: { id: quizId } },
       options:

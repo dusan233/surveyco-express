@@ -8,9 +8,7 @@ export const createQuizSchema = z.object({
 
 export const questionSchema = z.object({
   type: z.nativeEnum(QuestionType),
-  question_description: z
-    .string()
-    .min(1, "You must enter question description."),
+  description: z.string().min(1, "You must enter question description."),
   id: z.string().optional(),
 });
 

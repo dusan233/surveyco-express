@@ -10,7 +10,7 @@ export interface SurveyParams {
 export interface QuestionBase {
   id?: string;
   type: QuestionType;
-  question_description: string;
+  description: string;
 }
 export interface MultiChoiceQuestion extends QuestionBase {
   options: Option[];
