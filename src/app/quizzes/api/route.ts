@@ -15,6 +15,11 @@ router.get(
   ClerkExpressRequireAuth(),
   asyncHandler(quizController.getSurveyHandler)
 );
+router.get(
+  "/:surveyId/questions",
+  ClerkExpressRequireAuth(),
+  asyncHandler(quizController.getSurveyQuestionsHandler)
+);
 
 router.post(
   "/create-quiz",

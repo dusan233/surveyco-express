@@ -34,6 +34,25 @@ export const getSurvey = async (
   return quiz;
 };
 
+export const getQuestions = async (
+  surveyId: string,
+  skip: number = 0,
+  take: number = 30
+) => {
+  const questions = await prisma.question.findMany({
+    where: {
+      quizId: surveyId,
+    },
+    skip,
+    take,
+    include: {
+      options: true,
+    },
+  });
+
+  return questions;
+};
+
 export const saveQuestion = async (data: Question, quizId: string) => {
   const { id: questionId, ...questionData } = data;
 
