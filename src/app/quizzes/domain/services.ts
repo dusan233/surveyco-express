@@ -45,6 +45,7 @@ export const getQuestions = async (
     },
     skip,
     take,
+    orderBy: { created_at: "asc" },
     include: {
       options: true,
     },
