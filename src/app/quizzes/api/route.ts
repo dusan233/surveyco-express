@@ -5,7 +5,11 @@ import {
   validate,
   validateQuestionType,
 } from "../../../lib/middlewares";
-import { createQuizSchema, questionSchema } from "./schemaValidation";
+import {
+  createQuizSchema,
+  createSurveyCollectorSchema,
+  questionSchema,
+} from "./schemaValidation";
 import quizController from "./controller";
 
 const router = express.Router();
@@ -26,6 +30,13 @@ router.post(
   ClerkExpressRequireAuth(),
   validate(createQuizSchema),
   asyncHandler(quizController.createQuizHandler)
+);
+
+router.post(
+  "/:surveyId/collector",
+  ClerkExpressRequireAuth(),
+  validate(createSurveyCollectorSchema),
+  asyncHandler(quizController.createSurveyCollectorHandler)
 );
 
 router.put(

@@ -1,9 +1,13 @@
 import { z } from "zod";
-import { QuestionType } from "../../../types/types";
+import { CollectorType, QuestionType } from "../../../types/types";
 
 export const createQuizSchema = z.object({
   title: z.string().min(1, "You must enter quiz title."),
   category: z.string().min(1, "You must enter quiz title."),
+});
+
+export const createSurveyCollectorSchema = z.object({
+  type: z.nativeEnum(CollectorType),
 });
 
 export const questionSchema = z.object({

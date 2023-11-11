@@ -1,11 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import {
   createQuiz,
+  createSurveyCollector,
   getQuestions,
   getSurvey,
   saveQuestion,
 } from "../domain/services";
 import {
+  CollectorType,
   CreateQuizData,
   HttpStatusCode,
   MultiChoiceQuestion,
@@ -74,6 +76,33 @@ const saveQuestionHandler = async (
   return res.status(201).json(savedQuestion);
 };
 
+const createSurveyCollectorHandler = async (
+  req: Request<SurveyParams, any, { type: CollectorType }>,
+  res: Response,
+  next: NextFunction
+) => {
+  const surveyId = req.params.surveyId;
+  const collectorType = req.body.type;
+  const userId = req.auth.userId;
+  const survey = await getSurvey(surveyId);
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const collector = await createSurveyCollector(collectorType, surveyId);
+
+  return res.status(HttpStatusCode.CREATED).json(collector);
+};
+
 const getSurveyQuestionsHandler = async (
   req: Request<SurveyParams>,
   res: Response,
@@ -103,6 +132,7 @@ const getSurveyQuestionsHandler = async (
 export default {
   createQuizHandler,
   getSurveyQuestionsHandler,
+  createSurveyCollectorHandler,
   saveQuestionHandler,
   getSurveyHandler,
 };

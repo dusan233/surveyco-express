@@ -1,5 +1,6 @@
 import prisma from "../../../prismaClient";
 import {
+  CollectorType,
   CreateQuizData,
   MultiChoiceQuestion,
   Question,
@@ -52,6 +53,21 @@ export const getQuestions = async (
   });
 
   return questions;
+};
+
+export const createSurveyCollector = async (
+  collectorType: CollectorType,
+  surveyId: string
+) => {
+  const collector = await prisma.surveyCollector.create({
+    data: {
+      type: collectorType,
+      status: "open",
+      survey: { connect: { id: surveyId } },
+    },
+  });
+
+  return collector;
 };
 
 export const saveQuestion = async (data: Question, quizId: string) => {

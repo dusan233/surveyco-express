@@ -29,6 +29,10 @@ export enum QuestionType {
   textbox = "textbox",
 }
 
+export enum CollectorType {
+  web_link = "web_link",
+}
+
 export enum HttpStatusCode {
   CONTINUE = 100,
 
