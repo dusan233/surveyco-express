@@ -38,6 +38,10 @@ router.post(
   validate(createSurveyCollectorSchema),
   asyncHandler(quizController.createSurveyCollectorHandler)
 );
+router.get(
+  "/:surveyId/collector/:collectorId",
+  asyncHandler(quizController.getSurveyCollectorHandler)
+);
 
 router.put(
   "/:quizId/save-question",

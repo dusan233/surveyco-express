@@ -7,6 +7,10 @@ export interface SurveyParams {
   surveyId: string;
 }
 
+export interface CollectorParams extends SurveyParams {
+  collectorId: string;
+}
+
 export interface QuestionBase {
   id?: string;
   type: QuestionType;

@@ -4,9 +4,11 @@ import {
   createSurveyCollector,
   getQuestions,
   getSurvey,
+  getSurveyCollector,
   saveQuestion,
 } from "../domain/services";
 import {
+  CollectorParams,
   CollectorType,
   CreateQuizData,
   HttpStatusCode,
@@ -76,6 +78,20 @@ const saveQuestionHandler = async (
   return res.status(201).json(savedQuestion);
 };
 
+const getSurveyCollectorHandler = async (
+  req: Request<CollectorParams>,
+  res: Response,
+  next: NextFunction
+) => {
+  console.log("ovde sam");
+  //revisit this after ur certein u can implement all the nessesery logic
+  const collectorId = req.params.collectorId;
+
+  const collector = await getSurveyCollector(collectorId);
+
+  return res.status(HttpStatusCode.ACCEPTED).json(collector);
+};
+
 const createSurveyCollectorHandler = async (
   req: Request<SurveyParams, any, { type: CollectorType }>,
   res: Response,
@@ -135,4 +151,5 @@ export default {
   createSurveyCollectorHandler,
   saveQuestionHandler,
   getSurveyHandler,
+  getSurveyCollectorHandler,
 };
