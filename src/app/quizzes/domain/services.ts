@@ -5,6 +5,7 @@ import {
   MultiChoiceQuestion,
   Question,
   QuestionType,
+  SaveSurveyResponseRequestBody,
 } from "../../../types/types";
 
 export const createQuiz = async (userId: string, data: CreateQuizData) => {
@@ -76,6 +77,46 @@ export const getSurveyCollector = async (collectorId: string) => {
   });
 
   return collector;
+};
+
+export const saveSurveyResponse = async (
+  data: SaveSurveyResponseRequestBody,
+  collectorId: string
+) => {
+  const questionResponses: { questionId: string; answer: string }[] = [];
+  const filteredResponses = data.responses.filter(
+    (response) => response.answer.length !== 0
+  );
+  filteredResponses.forEach((qResponse) =>
+    typeof qResponse.answer === "string"
+      ? questionResponses.push({
+          questionId: qResponse.id,
+          answer: qResponse.answer,
+        })
+      : qResponse.answer.forEach((answer) =>
+          questionResponses.push({ questionId: qResponse.id, answer })
+        )
+  );
+
+  const surveyResponse = await prisma.surveyResponse.create({
+    data: {
+      collector: {
+        connect: {
+          id: collectorId,
+        },
+      },
+      answers: {
+        create: questionResponses.map((answer) => ({
+          answer: answer.answer,
+          question: {
+            connect: { id: answer.questionId },
+          },
+        })),
+      },
+    },
+  });
+
+  return surveyResponse;
 };
 
 export const saveQuestion = async (data: Question, quizId: string) => {

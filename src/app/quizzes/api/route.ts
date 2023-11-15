@@ -9,6 +9,7 @@ import {
   createQuizSchema,
   createSurveyCollectorSchema,
   questionSchema,
+  saveSurveyResponseSchema,
 } from "./schemaValidation";
 import quizController from "./controller";
 
@@ -41,6 +42,11 @@ router.post(
 router.get(
   "/:surveyId/collector/:collectorId",
   asyncHandler(quizController.getSurveyCollectorHandler)
+);
+router.put(
+  "/:surveyId/collector/:collectorId",
+  validate(saveSurveyResponseSchema),
+  asyncHandler(quizController.saveSurveyResponseHandler)
 );
 
 router.put(

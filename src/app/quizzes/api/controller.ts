@@ -6,6 +6,7 @@ import {
   getSurvey,
   getSurveyCollector,
   saveQuestion,
+  saveSurveyResponse,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -15,6 +16,7 @@ import {
   MultiChoiceQuestion,
   Question,
   QuestionType,
+  SaveSurveyResponseRequestBody,
   SurveyParams,
 } from "../../../types/types";
 import prisma from "../../../prismaClient";
@@ -119,6 +121,22 @@ const createSurveyCollectorHandler = async (
   return res.status(HttpStatusCode.CREATED).json(collector);
 };
 
+const saveSurveyResponseHandler = async (
+  req: Request<CollectorParams, any, SaveSurveyResponseRequestBody>,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+  const collectorId = req.params.collectorId;
+
+  const collector = await getSurveyCollector(collectorId);
+  if (!collector || collector.surveyId !== surveyId)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  const surveyResponse = await saveSurveyResponse(req.body, collectorId);
+
+  return res.status(HttpStatusCode.ACCEPTED).json(surveyResponse);
+};
+
 const getSurveyQuestionsHandler = async (
   req: Request<SurveyParams>,
   res: Response,
@@ -152,4 +170,5 @@ export default {
   saveQuestionHandler,
   getSurveyHandler,
   getSurveyCollectorHandler,
+  saveSurveyResponseHandler,
 };

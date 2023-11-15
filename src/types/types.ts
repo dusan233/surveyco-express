@@ -1,3 +1,6 @@
+import { z } from "zod";
+import { saveSurveyResponseSchema } from "../app/quizzes/api/schemaValidation";
+
 export interface CreateQuizData {
   title: string;
   category: string;
@@ -36,6 +39,10 @@ export enum QuestionType {
 export enum CollectorType {
   web_link = "web_link",
 }
+
+export type SaveSurveyResponseRequestBody = z.infer<
+  typeof saveSurveyResponseSchema
+>;
 
 export enum HttpStatusCode {
   CONTINUE = 100,
