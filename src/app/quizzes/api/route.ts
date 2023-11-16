@@ -32,7 +32,14 @@ router.post(
   validate(createQuizSchema),
   asyncHandler(quizController.createQuizHandler)
 );
+//results
+router.get(
+  "/:surveyId/results",
+  ClerkExpressRequireAuth(),
+  asyncHandler(quizController.getSurveyResponsesHandler)
+);
 
+//collector
 router.post(
   "/:surveyId/collector",
   ClerkExpressRequireAuth(),

@@ -1,10 +1,11 @@
+import { Prisma, Question } from "@prisma/client";
 import prisma from "../../../prismaClient";
 import {
   CollectorType,
   CreateQuizData,
   MultiChoiceQuestion,
-  Question,
   QuestionType,
+  Question as Questione,
   SaveSurveyResponseRequestBody,
 } from "../../../types/types";
 
@@ -34,6 +35,46 @@ export const getSurvey = async (
   });
 
   return quiz;
+};
+
+export const getQuestionResponses = async (
+  questions: ({
+    options: {
+      id: string;
+      description: string;
+      questionId: string;
+      created_at: Date;
+      updated_at: Date | null;
+    }[];
+  } & {
+    id: string;
+    description: string;
+    type: string;
+    created_at: Date;
+    updated_at: Date | null;
+    quizId: string;
+  })[]
+) => {
+  const questionResponsePromises: Promise<any>[] = [];
+  questions.forEach((question) => {
+    if (question.type === QuestionType.textbox) {
+      questionResponsePromises.push(Promise.resolve([]));
+    } else {
+      questionResponsePromises.push(
+        prisma.questionResponse.groupBy({
+          by: ["answer"],
+          where: {
+            questionId: question.id,
+          },
+          _count: {
+            answer: true,
+          },
+        })
+      );
+    }
+  });
+
+  return await Promise.all(questionResponsePromises);
 };
 
 export const getQuestions = async (
@@ -119,7 +160,7 @@ export const saveSurveyResponse = async (
   return surveyResponse;
 };
 
-export const saveQuestion = async (data: Question, quizId: string) => {
+export const saveQuestion = async (data: Questione, quizId: string) => {
   const { id: questionId, ...questionData } = data;
 
   const savedQuestion = await prisma.question.upsert({

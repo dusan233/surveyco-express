@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import {
   createQuiz,
   createSurveyCollector,
+  getQuestionResponses,
   getQuestions,
   getSurvey,
   getSurveyCollector,
@@ -137,6 +138,44 @@ const saveSurveyResponseHandler = async (
   return res.status(HttpStatusCode.ACCEPTED).json(surveyResponse);
 };
 
+const getSurveyResponsesHandler = async (
+  req: Request<SurveyParams>,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+  const userId = req.auth.userId;
+
+  const survey = await getSurvey(surveyId);
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const questions = await getQuestions(surveyId);
+  const questionResponsesData = await getQuestionResponses(questions);
+  const acctualData = questions.map((q, index) => {
+    return {
+      questionId: q.id,
+      results: questionResponsesData[index].map((option: any) => ({
+        answer: option.answer,
+        answerCount: option._count.answer,
+      })),
+    };
+  });
+
+  return res.status(HttpStatusCode.OK).json({
+    ds: "",
+    results: acctualData,
+  });
+};
+
 const getSurveyQuestionsHandler = async (
   req: Request<SurveyParams>,
   res: Response,
@@ -171,4 +210,5 @@ export default {
   getSurveyHandler,
   getSurveyCollectorHandler,
   saveSurveyResponseHandler,
+  getSurveyResponsesHandler,
 };
