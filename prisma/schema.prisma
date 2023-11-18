@@ -30,6 +30,7 @@ model QuestionOption {
   questionId String
   created_at DateTime @default(now())
   updated_at DateTime? @updatedAt
+  questionAnswer QuestionAnswer[]
 }
 
 model Quiz {
@@ -61,7 +62,7 @@ model SurveyResponse {
   updated_at DateTime? @updatedAt
   collector SurveyCollector @relation(fields: [collectorId], references: [id])
   collectorId String
-  answers QuestionResponse[]
+  questionResponses QuestionResponse[]
 }
 
 model QuestionResponse {
@@ -70,7 +71,16 @@ model QuestionResponse {
   surveyResponseId String
   question Question @relation(fields: [questionId], references: [id])
   questionId String
-  answer String
+  answer QuestionAnswer[]
+}
+
+model QuestionAnswer {
+  id          String  @id @default(uuid())
+  questionResponse QuestionResponse @relation(fields: [questionResponseId], references: [id])
+  questionResponseId String
+  questionOption QuestionOption? @relation(fields: [questionOptionId], references: [id])
+  questionOptionId String
+  textAnswer String?
 }
 
 model User {
