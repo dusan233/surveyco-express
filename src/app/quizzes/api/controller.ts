@@ -158,6 +158,10 @@ const getSurveyResponsesHandler = async (
       true
     );
 
+  // const dsqq = await prisma.question.findUnique({ where: { id: "dsqd" }, include: {
+
+  // } });
+
   const questions = await getQuestions(surveyId);
   const questionResponsesData = await getQuestionResponses(questions);
   const acctualData = questions.map((q, index) => {
