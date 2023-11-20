@@ -124,20 +124,20 @@ export const saveSurveyResponse = async (
   data: SaveSurveyResponseRequestBody,
   collectorId: string
 ) => {
-  const questionResponses: { questionId: string; answer: string }[] = [];
+  // const questionResponses: { questionId: string; answer: string }[] = [];
   const filteredResponses = data.responses.filter(
     (response) => response.answer.length !== 0
   );
-  filteredResponses.forEach((qResponse) =>
-    typeof qResponse.answer === "string"
-      ? questionResponses.push({
-          questionId: qResponse.id,
-          answer: qResponse.answer,
-        })
-      : qResponse.answer.forEach((answer) =>
-          questionResponses.push({ questionId: qResponse.id, answer })
-        )
-  );
+  // filteredResponses.forEach((qResponse) =>
+  //   typeof qResponse.answer === "string"
+  //     ? questionResponses.push({
+  //         questionId: qResponse.id,
+  //         answer: qResponse.answer,
+  //       })
+  //     : qResponse.answer.forEach((answer) =>
+  //         questionResponses.push({ questionId: qResponse.id, answer })
+  //       )
+  // );
 
   const surveyResponse = await prisma.surveyResponse.create({
     data: {
@@ -146,11 +146,41 @@ export const saveSurveyResponse = async (
           id: collectorId,
         },
       },
-      answers: {
-        create: questionResponses.map((answer) => ({
-          answer: answer.answer,
+      questionResponses: {
+        create: filteredResponses.map((question) => ({
           question: {
-            connect: { id: answer.questionId },
+            connect: { id: question.id },
+          },
+          answer: {
+            create:
+              question.type === QuestionType.textbox
+                ? [
+                    {
+                      question: {
+                        connect: { id: question.id },
+                      },
+                      textAnswer: question.answer as string,
+                    },
+                  ]
+                : typeof question.answer === "string"
+                ? [
+                    {
+                      question: {
+                        connect: { id: question.id },
+                      },
+                      questionOption: {
+                        connect: { id: question.answer },
+                      },
+                    },
+                  ]
+                : question.answer.map((answer) => ({
+                    question: {
+                      connect: { id: question.id },
+                    },
+                    questionOption: {
+                      connect: { id: answer },
+                    },
+                  })),
           },
         })),
       },

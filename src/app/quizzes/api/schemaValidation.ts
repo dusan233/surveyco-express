@@ -15,6 +15,7 @@ export const saveSurveyResponseSchema = z.object({
     z.object({
       id: z.string(),
       answer: z.string().or(z.array(z.string())),
+      type: z.nativeEnum(QuestionType),
     })
   ),
 });
