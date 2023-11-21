@@ -6,6 +6,7 @@ import {
   getQuestions,
   getSurvey,
   getSurveyCollector,
+  getSurveyPages,
   saveQuestion,
   saveSurveyResponse,
 } from "../domain/services";
@@ -56,8 +57,23 @@ const getSurveyHandler = async (
   return res.status(200).json(survey);
 };
 
+const getSurveyPagesHandler = async (
+  req: Request<SurveyParams>,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+
+  const survey = await getSurvey(surveyId);
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  const surveyPages = await getSurveyPages(surveyId);
+
+  return res.status(HttpStatusCode.OK).json(surveyPages);
+};
+
 const saveQuestionHandler = async (
-  req: Request<{ quizId: string }, any, Question>,
+  req: Request<{ quizId: string }, any, { data: Question; pageId: string }>,
   res: Response,
   next: NextFunction
 ) => {
@@ -77,7 +93,11 @@ const saveQuestionHandler = async (
       true
     );
 
-  const savedQuestion = await saveQuestion(req.body, quizId);
+  const savedQuestion = await saveQuestion(
+    req.body.data,
+    quizId,
+    req.body.pageId
+  );
   return res.status(201).json(savedQuestion);
 };
 
@@ -158,17 +178,16 @@ const getSurveyResponsesHandler = async (
       true
     );
 
-  const dsqq = await prisma.question.findUnique({ where: { id: "dsqd" } });
-
-  const questions = await getQuestions(surveyId);
+  const questions = await getQuestions(surveyId, 1);
   const questionResponsesData = await getQuestionResponses(questions);
   const acctualData = questions.map((q, index) => {
     return {
       questionId: q.id,
-      results: questionResponsesData[index].map((option: any) => ({
-        answer: option.answer,
-        answerCount: option._count.answer,
-      })),
+      results: questionResponsesData[index],
+      // .map((option: any) => ({
+      //   answer: option.answer,
+      //   answerCount: option._count.answer,
+      // })),
     };
   });
 
@@ -179,9 +198,8 @@ const getSurveyResponsesHandler = async (
 };
 
 const getSurveyQuestionsHandler = async (
-  req: Request<SurveyParams>,
-  res: Response,
-  next: NextFunction
+  req: Request<SurveyParams, any, never, { page?: string }>,
+  res: Response
 ) => {
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
@@ -199,7 +217,7 @@ const getSurveyQuestionsHandler = async (
       true
     );
 
-  const questions = await getQuestions(surveyId);
+  const questions = await getQuestions(surveyId, Number(req.query.page));
 
   return res.status(HttpStatusCode.OK).json({ questions });
 };
@@ -213,4 +231,5 @@ export default {
   getSurveyCollectorHandler,
   saveSurveyResponseHandler,
   getSurveyResponsesHandler,
+  getSurveyPagesHandler,
 };

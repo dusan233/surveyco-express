@@ -1,10 +1,16 @@
 import { Request, Response, NextFunction } from "express";
 import { z, AnyZodObject, ZodError } from "zod";
 import { AppError } from "../errors";
-import { HttpStatusCode, QuestionBase, QuestionType } from "../../types/types";
+import {
+  HttpStatusCode,
+  Question,
+  QuestionBase,
+  QuestionType,
+} from "../../types/types";
 import {
   multiChoiceQuestionSchema,
   questionSchema,
+  saveMultiChoiceQuestionSchema,
 } from "../../app/quizzes/api/schemaValidation";
 
 export const validate =
@@ -15,7 +21,6 @@ export const validate =
       await schema.parseAsync(req.body);
       return next();
     } catch (error: any) {
-      console.log(error, "provera ovde");
       if (error instanceof ZodError) {
         return next(
           new AppError("", "Invalid data", HttpStatusCode.BAD_REQUEST, "", true)
@@ -35,14 +40,14 @@ export const validate =
   };
 
 export const validateQuestionType = async (
-  req: Request<any, any, QuestionBase>,
+  req: Request<any, any, { data: Question; pageId: string }>,
   res: Response,
   next: NextFunction
 ) => {
   try {
     console.log(req.body, "extendo");
-    if (req.body.type !== QuestionType.textbox) {
-      await multiChoiceQuestionSchema.parseAsync(req.body);
+    if (req.body.data.type !== QuestionType.textbox) {
+      await saveMultiChoiceQuestionSchema.parseAsync(req.body);
     }
     return next();
   } catch (error) {

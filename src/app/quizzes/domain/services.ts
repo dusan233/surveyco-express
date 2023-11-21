@@ -17,6 +17,11 @@ export const createQuiz = async (userId: string, data: CreateQuizData) => {
       creator: {
         connect: { id: userId },
       },
+      surveyPages: {
+        create: {
+          number: 1,
+        },
+      },
     },
   });
 
@@ -61,13 +66,13 @@ export const getQuestionResponses = async (
       questionResponsePromises.push(Promise.resolve([]));
     } else {
       questionResponsePromises.push(
-        prisma.questionResponse.groupBy({
-          by: ["answer"],
+        prisma.questionAnswer.groupBy({
+          by: ["questionOptionId"],
           where: {
             questionId: question.id,
           },
           _count: {
-            answer: true,
+            questionOptionId: true,
           },
         })
       );
@@ -79,12 +84,14 @@ export const getQuestionResponses = async (
 
 export const getQuestions = async (
   surveyId: string,
+  page: number,
   skip: number = 0,
-  take: number = 30
+  take: number = 50
 ) => {
   const questions = await prisma.question.findMany({
     where: {
       quizId: surveyId,
+      surveyPage: { number: page },
     },
     skip,
     take,
@@ -190,7 +197,19 @@ export const saveSurveyResponse = async (
   return surveyResponse;
 };
 
-export const saveQuestion = async (data: Questione, quizId: string) => {
+export const getSurveyPages = async (surveyId: string) => {
+  const pages = await prisma.surveyPage.findMany({
+    where: { survey: { id: surveyId } },
+  });
+
+  return pages;
+};
+
+export const saveQuestion = async (
+  data: Questione,
+  quizId: string,
+  pageId: string
+) => {
   const { id: questionId, ...questionData } = data;
 
   const savedQuestion = await prisma.question.upsert({
@@ -227,6 +246,7 @@ export const saveQuestion = async (data: Questione, quizId: string) => {
       description: questionData.description,
       type: questionData.type,
       quiz: { connect: { id: quizId } },
+      surveyPage: { connect: { id: pageId } },
       options:
         questionData.type !== QuestionType.textbox
           ? {

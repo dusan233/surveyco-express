@@ -36,3 +36,13 @@ export const multiChoiceQuestionSchema = questionSchema.extend({
     )
     .nonempty("You must add at least one option."),
 });
+
+export const saveQuestionSchema = z.object({
+  data: questionSchema,
+  pageId: z.string(),
+});
+
+export const saveMultiChoiceQuestionSchema = z.object({
+  data: multiChoiceQuestionSchema,
+  pageId: z.string(),
+});

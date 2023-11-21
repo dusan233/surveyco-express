@@ -9,6 +9,7 @@ import {
   createQuizSchema,
   createSurveyCollectorSchema,
   questionSchema,
+  saveQuestionSchema,
   saveSurveyResponseSchema,
 } from "./schemaValidation";
 import quizController from "./controller";
@@ -32,6 +33,13 @@ router.post(
   validate(createQuizSchema),
   asyncHandler(quizController.createQuizHandler)
 );
+//survey pages
+
+router.get(
+  "/:surveyId/pages",
+  asyncHandler(quizController.getSurveyPagesHandler)
+);
+
 //results
 router.get(
   "/:surveyId/results",
@@ -59,7 +67,7 @@ router.put(
 router.put(
   "/:quizId/save-question",
   ClerkExpressRequireAuth(),
-  validate(questionSchema),
+  validate(saveQuestionSchema),
   validateQuestionType,
   asyncHandler(quizController.saveQuestionHandler)
 );

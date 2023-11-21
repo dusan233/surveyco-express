@@ -19,6 +19,8 @@ model Question {
   updated_at DateTime? @updatedAt
   quiz Quiz @relation(fields: [quizId], references: [id])
   quizId String
+  surveyPage SurveyPage @relation(fields: [surveyPageId], references: [id])
+  surveyPageId String
   options QuestionOption[]
   questionResponses QuestionResponse[]
   questionAnswers QuestionAnswer[]
@@ -42,8 +44,19 @@ model Quiz {
   updated_at DateTime? @updatedAt
   questions Question[]
   collectors SurveyCollector[]
+  surveyPages SurveyPage[]
   creator User @relation(fields: [creatorId], references: [id])
   creatorId String
+}
+
+model SurveyPage {
+  id          String  @id @default(uuid())
+  created_at DateTime @default(now())
+  updated_at DateTime? @updatedAt
+  survey Quiz @relation(fields: [surveyId], references: [id])
+  surveyId String
+  number Int
+  questions Question[]
 }
 
 model SurveyCollector {
