@@ -13,6 +13,7 @@ import {
   saveSurveyResponseSchema,
 } from "./schemaValidation";
 import quizController from "./controller";
+import prisma from "../../../prismaClient";
 
 const router = express.Router();
 

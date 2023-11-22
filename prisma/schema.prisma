@@ -17,6 +17,7 @@ model Question {
   type        String
   created_at DateTime @default(now())
   updated_at DateTime? @updatedAt
+  number Int 
   quiz Quiz @relation(fields: [quizId], references: [id])
   quizId String
   surveyPage SurveyPage @relation(fields: [surveyPageId], references: [id])
