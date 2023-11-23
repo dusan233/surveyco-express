@@ -247,6 +247,7 @@ export const saveQuestion = async (
       type: questionData.type,
       quiz: { connect: { id: quizId } },
       surveyPage: { connect: { id: pageId } },
+      number: (await getSurveyQuestionsCount(quizId)) + 1,
       options:
         questionData.type !== QuestionType.textbox
           ? {
@@ -259,4 +260,14 @@ export const saveQuestion = async (
   });
 
   return savedQuestion;
+};
+
+export const getSurveyQuestionsCount = async (surveyId: string) => {
+  return await prisma.question.count({
+    where: {
+      quiz: {
+        id: surveyId,
+      },
+    },
+  });
 };

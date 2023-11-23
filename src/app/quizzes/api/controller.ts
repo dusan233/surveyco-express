@@ -7,6 +7,7 @@ import {
   getSurvey,
   getSurveyCollector,
   getSurveyPages,
+  getSurveyQuestionsCount,
   saveQuestion,
   saveSurveyResponse,
 } from "../domain/services";
@@ -79,6 +80,7 @@ const saveQuestionHandler = async (
 ) => {
   const quizId = req.params.quizId;
   const userId = req.auth.userId;
+
   const survey = await getSurvey(quizId);
 
   if (!survey)
