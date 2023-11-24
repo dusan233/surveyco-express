@@ -65,12 +65,18 @@ router.put(
   asyncHandler(quizController.saveSurveyResponseHandler)
 );
 
+//questions
 router.put(
   "/:quizId/save-question",
   ClerkExpressRequireAuth(),
   validate(saveQuestionSchema),
   validateQuestionType,
   asyncHandler(quizController.saveQuestionHandler)
+);
+router.delete(
+  "/:surveyId/question/:questionId",
+  ClerkExpressRequireAuth(),
+  asyncHandler(quizController.deleteSurveyQuestionHandler)
 );
 
 export default router;

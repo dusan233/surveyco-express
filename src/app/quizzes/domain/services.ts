@@ -104,6 +104,30 @@ export const getQuestions = async (
   return questions;
 };
 
+export const getQuestion = async (questionId: string) => {
+  return await prisma.question.findUnique({
+    where: { id: questionId },
+  });
+};
+
+export const deleteQuestion = async (questionId: string) => {
+  const deleteQuestion = prisma.question.delete({ where: { id: questionId } });
+  const deleteQuestionOptions = prisma.questionOption.deleteMany({
+    where: {
+      question: {
+        id: questionId,
+      },
+    },
+  });
+
+  const deleteQuestionTransaction = await prisma.$transaction([
+    deleteQuestionOptions,
+    deleteQuestion,
+  ]);
+
+  return deleteQuestionTransaction[1];
+};
+
 export const createSurveyCollector = async (
   collectorType: CollectorType,
   surveyId: string

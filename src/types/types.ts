@@ -9,6 +9,9 @@ export interface CreateQuizData {
 export interface SurveyParams {
   surveyId: string;
 }
+export interface SurveyQuestionParams extends SurveyParams {
+  questionId: string;
+}
 
 export interface CollectorParams extends SurveyParams {
   collectorId: string;

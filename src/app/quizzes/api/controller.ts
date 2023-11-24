@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import {
   createQuiz,
   createSurveyCollector,
+  deleteQuestion,
+  getQuestion,
   getQuestionResponses,
   getQuestions,
   getSurvey,
@@ -21,6 +23,7 @@ import {
   QuestionType,
   SaveSurveyResponseRequestBody,
   SurveyParams,
+  SurveyQuestionParams,
 } from "../../../types/types";
 import prisma from "../../../prismaClient";
 import { AppError } from "../../../lib/errors";
@@ -115,6 +118,39 @@ const getSurveyCollectorHandler = async (
   const collector = await getSurveyCollector(collectorId);
 
   return res.status(HttpStatusCode.ACCEPTED).json(collector);
+};
+
+const deleteSurveyQuestionHandler = async (
+  req: Request<SurveyQuestionParams>,
+  res: Response,
+  next: NextFunction
+) => {
+  const surveyId = req.params.surveyId;
+  const questionId = req.params.questionId;
+  const userId = req.auth.userId;
+
+  const [survey, question] = await Promise.all([
+    getSurvey(surveyId),
+    getQuestion(questionId),
+  ]);
+
+  if (!survey || !question)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId || question.quizId !== surveyId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  //here we deleting if question has no responses
+
+  await deleteQuestion(questionId);
+
+  return res.sendStatus(HttpStatusCode.NO_CONTENT);
 };
 
 const createSurveyCollectorHandler = async (
@@ -234,4 +270,5 @@ export default {
   saveSurveyResponseHandler,
   getSurveyResponsesHandler,
   getSurveyPagesHandler,
+  deleteSurveyQuestionHandler,
 };
