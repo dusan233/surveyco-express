@@ -65,6 +65,13 @@ router.put(
   asyncHandler(quizController.saveSurveyResponseHandler)
 );
 
+//survey pages
+router.post(
+  "/:surveyId/page",
+  ClerkExpressRequireAuth(),
+  asyncHandler(quizController.createSurveyPageHandler)
+);
+
 //questions
 router.put(
   "/:quizId/save-question",

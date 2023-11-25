@@ -110,22 +110,58 @@ export const getQuestion = async (questionId: string) => {
   });
 };
 
-export const deleteQuestion = async (questionId: string) => {
-  const deleteQuestion = prisma.question.delete({ where: { id: questionId } });
-  const deleteQuestionOptions = prisma.questionOption.deleteMany({
-    where: {
-      question: {
-        id: questionId,
+export const deleteQuestion = async (question: {
+  id: string;
+  number: number;
+  quizId: string;
+}) => {
+  return await prisma.$transaction(async (tx) => {
+    const deletedQuestion = await tx.question.delete({
+      where: { id: question.id },
+    });
+    await tx.questionOption.deleteMany({
+      where: {
+        question: {
+          id: question.id,
+        },
+      },
+    });
+
+    await updateQuestionsNumber(question.quizId, question.number, "decrement");
+
+    return deletedQuestion;
+  });
+};
+
+export const createSurveyPage = async (surveyId: string) => {
+  return await prisma.surveyPage.create({
+    data: {
+      number:
+        (await prisma.surveyPage.count({
+          where: { survey: { id: surveyId } },
+        })) + 1,
+      survey: {
+        connect: {
+          id: surveyId,
+        },
       },
     },
   });
+};
 
-  const deleteQuestionTransaction = await prisma.$transaction([
-    deleteQuestionOptions,
-    deleteQuestion,
-  ]);
-
-  return deleteQuestionTransaction[1];
+export const updateQuestionsNumber = async (
+  surveyId: string,
+  startingQuestionNumber: number,
+  action: "increment" | "decrement"
+) => {
+  return prisma.question.updateMany({
+    where: { number: { gt: startingQuestionNumber }, quiz: { id: surveyId } },
+    data: {
+      number: {
+        ...(action === "increment" ? { increment: 1 } : { decrement: 1 }),
+      },
+    },
+  });
 };
 
 export const createSurveyCollector = async (

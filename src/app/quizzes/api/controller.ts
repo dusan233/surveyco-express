@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import {
   createQuiz,
   createSurveyCollector,
+  createSurveyPage,
   deleteQuestion,
   getQuestion,
   getQuestionResponses,
@@ -148,9 +149,34 @@ const deleteSurveyQuestionHandler = async (
 
   //here we deleting if question has no responses
 
-  await deleteQuestion(questionId);
+  await deleteQuestion(question);
 
   return res.sendStatus(HttpStatusCode.NO_CONTENT);
+};
+
+const createSurveyPageHandler = async (
+  req: Request<SurveyParams>,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+  const userId = req.auth.userId;
+  const survey = await getSurvey(surveyId);
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const createdPage = await createSurveyPage(surveyId);
+
+  return res.status(HttpStatusCode.CREATED).json(createdPage);
 };
 
 const createSurveyCollectorHandler = async (
@@ -271,4 +297,5 @@ export default {
   getSurveyResponsesHandler,
   getSurveyPagesHandler,
   deleteSurveyQuestionHandler,
+  createSurveyPageHandler,
 };
