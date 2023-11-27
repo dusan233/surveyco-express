@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { CollectorType, QuestionType } from "../../../types/types";
+import {
+  CollectorType,
+  OperationPosition,
+  QuestionType,
+} from "../../../types/types";
 
 export const createQuizSchema = z.object({
   title: z.string().min(1, "You must enter quiz title."),
@@ -35,6 +39,12 @@ export const multiChoiceQuestionSchema = questionSchema.extend({
       })
     )
     .nonempty("You must add at least one option."),
+});
+
+export const placeQuestionSchema = z.object({
+  page: z.preprocess((x) => Number(x), z.number()),
+  position: z.nativeEnum(OperationPosition),
+  questionNumber: z.preprocess((x) => Number(x), z.number()),
 });
 
 export const saveQuestionSchema = z.object({

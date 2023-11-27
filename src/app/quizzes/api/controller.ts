@@ -20,6 +20,8 @@ import {
   CreateQuizData,
   HttpStatusCode,
   MultiChoiceQuestion,
+  OperationPosition,
+  PlaceQuestionReqBody,
   Question,
   QuestionType,
   SaveSurveyResponseRequestBody,
@@ -73,8 +75,54 @@ const getSurveyPagesHandler = async (
     throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
 
   const surveyPages = await getSurveyPages(surveyId);
+  const formatedSurveyPages = surveyPages.map((page) => ({
+    id: page.id,
+    created_at: page.created_at,
+    updated_at: page.updated_at,
+    surveyId: page.surveyId,
+    number: page.number,
+    totalQuestions: page._count.questions,
+  }));
 
-  return res.status(HttpStatusCode.OK).json(surveyPages);
+  return res.status(HttpStatusCode.OK).json(formatedSurveyPages);
+};
+
+const copyQuestionHandler = async (
+  req: Request<SurveyQuestionParams, any, PlaceQuestionReqBody>,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+  const questionId = req.params.questionId;
+  const userId = req.auth.userId;
+
+  const [survey, question] = await Promise.all([
+    getSurvey(surveyId),
+    getQuestion(questionId),
+  ]);
+
+  if (!survey || !question)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId || question.quizId !== surveyId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  //transactione
+  //prvo gde ubacujes pitanje pomeri sve ispred njega za 1.
+  //sacuvaj pitanje sa numberom koji god da je.
+  await prisma.$transaction(async (tx) => {
+    const copiedQuestionNumber =
+      req.body.position === OperationPosition.after
+        ? req.body.questionNumber + 1
+        : req.body.questionNumber;
+  });
+
+  return res.status(HttpStatusCode.OK).json({ body: req.body });
 };
 
 const saveQuestionHandler = async (
@@ -123,8 +171,7 @@ const getSurveyCollectorHandler = async (
 
 const deleteSurveyQuestionHandler = async (
   req: Request<SurveyQuestionParams>,
-  res: Response,
-  next: NextFunction
+  res: Response
 ) => {
   const surveyId = req.params.surveyId;
   const questionId = req.params.questionId;
@@ -298,4 +345,5 @@ export default {
   getSurveyPagesHandler,
   deleteSurveyQuestionHandler,
   createSurveyPageHandler,
+  copyQuestionHandler,
 };

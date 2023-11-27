@@ -8,6 +8,7 @@ import {
 import {
   createQuizSchema,
   createSurveyCollectorSchema,
+  placeQuestionSchema,
   questionSchema,
   saveQuestionSchema,
   saveSurveyResponseSchema,
@@ -80,10 +81,17 @@ router.put(
   validateQuestionType,
   asyncHandler(quizController.saveQuestionHandler)
 );
+
 router.delete(
   "/:surveyId/question/:questionId",
   ClerkExpressRequireAuth(),
   asyncHandler(quizController.deleteSurveyQuestionHandler)
+);
+router.put(
+  "/:surveyId/question/:questionId/copy",
+  ClerkExpressRequireAuth(),
+  validate(placeQuestionSchema),
+  asyncHandler(quizController.copyQuestionHandler)
 );
 
 export default router;

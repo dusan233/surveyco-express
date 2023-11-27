@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { saveSurveyResponseSchema } from "../app/quizzes/api/schemaValidation";
+import {
+  placeQuestionSchema,
+  saveSurveyResponseSchema,
+} from "../app/quizzes/api/schemaValidation";
 
 export interface CreateQuizData {
   title: string;
@@ -16,6 +19,8 @@ export interface SurveyQuestionParams extends SurveyParams {
 export interface CollectorParams extends SurveyParams {
   collectorId: string;
 }
+
+export type PlaceQuestionReqBody = z.infer<typeof placeQuestionSchema>;
 
 export interface QuestionBase {
   id?: string;
@@ -37,6 +42,11 @@ export enum QuestionType {
   checkboxes = "checkbox",
   dropdown = "dropdown",
   textbox = "textbox",
+}
+
+export enum OperationPosition {
+  after = "after",
+  before = "before",
 }
 
 export enum CollectorType {

@@ -260,6 +260,13 @@ export const saveSurveyResponse = async (
 export const getSurveyPages = async (surveyId: string) => {
   const pages = await prisma.surveyPage.findMany({
     where: { survey: { id: surveyId } },
+    include: {
+      _count: {
+        select: {
+          questions: true,
+        },
+      },
+    },
   });
 
   return pages;

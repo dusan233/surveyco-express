@@ -18,7 +18,8 @@ export const validate =
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       console.log(req.body);
-      await schema.parseAsync(req.body);
+      const dta = await schema.parseAsync(req.body);
+      req.body = dta;
       return next();
     } catch (error: any) {
       if (error instanceof ZodError) {
