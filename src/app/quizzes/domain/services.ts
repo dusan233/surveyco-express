@@ -95,7 +95,7 @@ export const getQuestions = async (
     },
     skip,
     take,
-    orderBy: { created_at: "asc" },
+    orderBy: { number: "asc" },
     include: {
       options: true,
     },
@@ -107,6 +107,9 @@ export const getQuestions = async (
 export const getQuestion = async (questionId: string) => {
   return await prisma.question.findUnique({
     where: { id: questionId },
+    include: {
+      options: true,
+    },
   });
 };
 
@@ -314,7 +317,7 @@ export const saveQuestion = async (
       type: questionData.type,
       quiz: { connect: { id: quizId } },
       surveyPage: { connect: { id: pageId } },
-      number: (await getSurveyQuestionsCount(quizId)) + 1,
+      number: (await getSurveyPageQuestionsCount(quizId, pageId)) + 1,
       options:
         questionData.type !== QuestionType.textbox
           ? {
@@ -329,11 +332,17 @@ export const saveQuestion = async (
   return savedQuestion;
 };
 
-export const getSurveyQuestionsCount = async (surveyId: string) => {
+export const getSurveyPageQuestionsCount = async (
+  surveyId: string,
+  pageId: string
+) => {
   return await prisma.question.count({
     where: {
       quiz: {
         id: surveyId,
+      },
+      surveyPage: {
+        id: pageId,
       },
     },
   });

@@ -10,9 +10,10 @@ import {
   getSurvey,
   getSurveyCollector,
   getSurveyPages,
-  getSurveyQuestionsCount,
+  getSurveyPageQuestionsCount,
   saveQuestion,
   saveSurveyResponse,
+  updateQuestionsNumber,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -91,6 +92,7 @@ const copyQuestionHandler = async (
   req: Request<SurveyQuestionParams, any, PlaceQuestionReqBody>,
   res: Response
 ) => {
+  console.log("handler bato");
   const surveyId = req.params.surveyId;
   const questionId = req.params.questionId;
   const userId = req.auth.userId;
@@ -111,18 +113,88 @@ const copyQuestionHandler = async (
       "",
       true
     );
-
+  console.log("ovde sve ok");
   //transactione
   //prvo gde ubacujes pitanje pomeri sve ispred njega za 1.
   //sacuvaj pitanje sa numberom koji god da je.
-  await prisma.$transaction(async (tx) => {
-    const copiedQuestionNumber =
+  const createdQuestion = await prisma.$transaction(async (tx) => {
+    const targetQuestionPromise = tx.question.findUnique({
+      where: { id: req.body.questionId },
+    });
+    const targetSurveyPagePromise = tx.surveyPage.findUnique({
+      where: { id: req.body.pageId },
+      include: {
+        _count: {
+          select: { questions: true },
+        },
+      },
+    });
+    const [targetQuestion, targetSurveyPage] = await Promise.all([
+      targetQuestionPromise,
+      targetSurveyPagePromise,
+    ]);
+
+    if (
+      !targetSurveyPage ||
+      !targetQuestion ||
+      targetQuestion?.surveyPageId !== req.body.pageId
+    ) {
+      //pitanje premesteno vrati error. Kao nesto nije u redu mozda da refresh podatke sa invalidate query.
+      //ili obrisano pitanje.
+      //ili obrisana stranica.
+      throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+    }
+
+    if (targetSurveyPage?._count.questions === 50) {
+      //stranica puna ne moze vise
+      throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+    }
+    const newQuestionNumber =
       req.body.position === OperationPosition.after
-        ? req.body.questionNumber + 1
-        : req.body.questionNumber;
+        ? targetQuestion.number + 1
+        : targetQuestion.number;
+    await tx.question.updateMany({
+      where: {
+        number: {
+          gt:
+            req.body.position === OperationPosition.before
+              ? targetQuestion.number - 1
+              : targetQuestion.number,
+        },
+        quiz: { id: surveyId },
+      },
+      data: {
+        number: {
+          increment: 1,
+        },
+      },
+    });
+    const newQuestion = await tx.question.create({
+      data: {
+        description: question.description,
+        type: question.type,
+        quiz: {
+          connect: {
+            id: surveyId,
+          },
+        },
+        surveyPage: { connect: { id: targetSurveyPage.id } },
+        number: newQuestionNumber,
+        options:
+          question.type !== QuestionType.textbox
+            ? {
+                create: (question as MultiChoiceQuestion).options.map(
+                  (option) => ({ description: option.description })
+                ),
+              }
+            : undefined,
+      },
+    });
+
+    return newQuestion;
   });
 
-  return res.status(HttpStatusCode.OK).json({ body: req.body });
+  return res.status(HttpStatusCode.OK).json(createdQuestion);
 };
 
 const saveQuestionHandler = async (

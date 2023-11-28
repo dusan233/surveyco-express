@@ -42,9 +42,9 @@ export const multiChoiceQuestionSchema = questionSchema.extend({
 });
 
 export const placeQuestionSchema = z.object({
-  page: z.preprocess((x) => Number(x), z.number()),
+  pageId: z.string(),
   position: z.nativeEnum(OperationPosition),
-  questionNumber: z.preprocess((x) => Number(x), z.number()),
+  questionId: z.string(),
 });
 
 export const saveQuestionSchema = z.object({
