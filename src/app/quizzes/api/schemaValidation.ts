@@ -42,7 +42,7 @@ export const multiChoiceQuestionSchema = questionSchema.extend({
 });
 
 export const placeQuestionSchema = z.object({
-  pageId: z.string(),
+  pageId: z.string().optional(),
   position: z.nativeEnum(OperationPosition),
   questionId: z.string(),
 });

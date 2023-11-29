@@ -87,7 +87,7 @@ router.delete(
   ClerkExpressRequireAuth(),
   asyncHandler(quizController.deleteSurveyQuestionHandler)
 );
-router.put(
+router.post(
   "/:surveyId/question/:questionId/copy",
   ClerkExpressRequireAuth(),
   validate(placeQuestionSchema),

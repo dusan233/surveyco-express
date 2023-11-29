@@ -92,7 +92,6 @@ const copyQuestionHandler = async (
   req: Request<SurveyQuestionParams, any, PlaceQuestionReqBody>,
   res: Response
 ) => {
-  console.log("handler bato");
   const surveyId = req.params.surveyId;
   const questionId = req.params.questionId;
   const userId = req.auth.userId;
@@ -113,85 +112,186 @@ const copyQuestionHandler = async (
       "",
       true
     );
-  console.log("ovde sve ok");
+
   //transactione
   //prvo gde ubacujes pitanje pomeri sve ispred njega za 1.
   //sacuvaj pitanje sa numberom koji god da je.
   const createdQuestion = await prisma.$transaction(async (tx) => {
-    const targetQuestionPromise = tx.question.findUnique({
-      where: { id: req.body.questionId },
-    });
-    const targetSurveyPagePromise = tx.surveyPage.findUnique({
-      where: { id: req.body.pageId },
-      include: {
-        _count: {
-          select: { questions: true },
-        },
-      },
-    });
-    const [targetQuestion, targetSurveyPage] = await Promise.all([
-      targetQuestionPromise,
-      targetSurveyPagePromise,
-    ]);
-
-    if (
-      !targetSurveyPage ||
-      !targetQuestion ||
-      targetQuestion?.surveyPageId !== req.body.pageId
-    ) {
-      //pitanje premesteno vrati error. Kao nesto nije u redu mozda da refresh podatke sa invalidate query.
-      //ili obrisano pitanje.
-      //ili obrisana stranica.
-      throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-    }
-
-    if (targetSurveyPage?._count.questions === 50) {
-      //stranica puna ne moze vise
-      throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-    }
-    const newQuestionNumber =
-      req.body.position === OperationPosition.after
-        ? targetQuestion.number + 1
-        : targetQuestion.number;
-    await tx.question.updateMany({
-      where: {
-        number: {
-          gt:
-            req.body.position === OperationPosition.before
-              ? targetQuestion.number - 1
-              : targetQuestion.number,
-        },
-        quiz: { id: surveyId },
-      },
-      data: {
-        number: {
-          increment: 1,
-        },
-      },
-    });
-    const newQuestion = await tx.question.create({
-      data: {
-        description: question.description,
-        type: question.type,
-        quiz: {
-          connect: {
-            id: surveyId,
+    if (req.body.questionId) {
+      const targetQuestionPromise = tx.question.findUnique({
+        where: { id: req.body.questionId },
+      });
+      const targetSurveyPagePromise = tx.surveyPage.findUnique({
+        where: { id: req.body.pageId },
+        include: {
+          _count: {
+            select: { questions: true },
           },
         },
-        surveyPage: { connect: { id: targetSurveyPage.id } },
-        number: newQuestionNumber,
-        options:
-          question.type !== QuestionType.textbox
-            ? {
-                create: (question as MultiChoiceQuestion).options.map(
-                  (option) => ({ description: option.description })
-                ),
-              }
-            : undefined,
-      },
-    });
+      });
+      const [targetQuestion, targetSurveyPage] = await Promise.all([
+        targetQuestionPromise,
+        targetSurveyPagePromise,
+      ]);
 
-    return newQuestion;
+      if (
+        !targetSurveyPage ||
+        !targetQuestion ||
+        targetQuestion?.surveyPageId !== req.body.pageId
+      ) {
+        //pitanje premesteno vrati error. Kao nesto nije u redu mozda da refresh podatke sa invalidate query.
+        //ili obrisano pitanje.
+        //ili obrisana stranica.
+        throw new AppError(
+          "",
+          "Not found",
+          HttpStatusCode.BAD_REQUEST,
+          "",
+          true
+        );
+      }
+
+      if (targetSurveyPage?._count.questions === 50) {
+        //stranica puna ne moze vise
+        throw new AppError(
+          "",
+          "Not found",
+          HttpStatusCode.BAD_REQUEST,
+          "",
+          true
+        );
+      }
+      const newQuestionNumber =
+        req.body.position === OperationPosition.after
+          ? targetQuestion.number + 1
+          : targetQuestion.number;
+      await tx.question.updateMany({
+        where: {
+          number: {
+            gt:
+              req.body.position === OperationPosition.before
+                ? targetQuestion.number - 1
+                : targetQuestion.number,
+          },
+          quiz: { id: surveyId },
+        },
+        data: {
+          number: {
+            increment: 1,
+          },
+        },
+      });
+      const newQuestion = await tx.question.create({
+        data: {
+          description: question.description,
+          type: question.type,
+          quiz: {
+            connect: {
+              id: surveyId,
+            },
+          },
+          surveyPage: { connect: { id: targetSurveyPage.id } },
+          number: newQuestionNumber,
+          options:
+            question.type !== QuestionType.textbox
+              ? {
+                  create: (question as MultiChoiceQuestion).options.map(
+                    (option) => ({ description: option.description })
+                  ),
+                }
+              : undefined,
+        },
+      });
+
+      return newQuestion;
+    } else {
+      const targetSurveyPage = await tx.surveyPage.findUnique({
+        where: { id: req.body.pageId },
+        include: {
+          _count: {
+            select: { questions: true },
+          },
+        },
+      });
+      // if(!targetSurveyPage) {
+      //   throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+      // }
+      // const pageBeforeTarget = await tx.surveyPage.findFirst({
+      //   where: {survey: {id: surveyId}, number: targetSurveyPage.number - 1},
+      //   include: {_count: {select: {questions: true}}}
+      // })
+      // const lastQuestionOnPageBeforeTarget= await tx.question.findFirst({
+      //   where: {quiz: {id: surveyId}, surveyPage: {id: pageBeforeTarget?.id}},
+      //   orderBy: {number: "desc"}
+      // })
+      // let newQuestionNumber = !pageBeforeTarget  ? 1 : lastQuestionOnPageBeforeTarget?.number + 1;
+
+      if (!targetSurveyPage || targetSurveyPage._count.questions !== 0) {
+        //stranica puna ne moze vise
+        throw new AppError(
+          "",
+          "Bad reqeust",
+          HttpStatusCode.BAD_REQUEST,
+          "",
+          true
+        );
+      }
+      const pagesWithQuestionCount = await tx.surveyPage.findMany({
+        where: {
+          survey: { id: surveyId },
+          number: { lt: targetSurveyPage.number },
+        },
+
+        include: {
+          _count: {
+            select: {
+              questions: true,
+            },
+          },
+        },
+        orderBy: {
+          number: "desc",
+        },
+      });
+      const firstPageBeforeWithQuestions = pagesWithQuestionCount.find(
+        (page) => page._count.questions > 0
+      )?.id;
+      const questionBeforeNewQuestion = await tx.question.findFirst({
+        where: { surveyPage: { id: firstPageBeforeWithQuestions } },
+        orderBy: { number: "desc" },
+      });
+
+      // if(!questionBeforeNewQuestion) {
+      //   //something went wrong
+      //   throw new AppError("", "Bad reqeust", HttpStatusCode.BAD_REQUEST, "", true);
+      // }
+
+      const newQuestion = await tx.question.create({
+        data: {
+          description: question.description,
+          type: question.type,
+          quiz: {
+            connect: {
+              id: surveyId,
+            },
+          },
+          surveyPage: { connect: { id: targetSurveyPage.id } },
+          number: questionBeforeNewQuestion
+            ? questionBeforeNewQuestion.number + 1
+            : 1,
+          options:
+            question.type !== QuestionType.textbox
+              ? {
+                  create: (question as MultiChoiceQuestion).options.map(
+                    (option) => ({ description: option.description })
+                  ),
+                }
+              : undefined,
+        },
+      });
+
+      return newQuestion;
+    }
   });
 
   return res.status(HttpStatusCode.OK).json(createdQuestion);
