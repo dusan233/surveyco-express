@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { z, AnyZodObject, ZodError } from "zod";
+import { z, AnyZodObject, ZodError, ZodSchema } from "zod";
 import { AppError } from "../errors";
 import {
   HttpStatusCode,
@@ -14,7 +14,7 @@ import {
 } from "../../app/quizzes/api/schemaValidation";
 
 export const validate =
-  (schema: AnyZodObject) =>
+  (schema: ZodSchema) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       console.log(req.body);

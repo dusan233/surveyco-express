@@ -94,4 +94,11 @@ router.post(
   asyncHandler(quizController.copyQuestionHandler)
 );
 
+router.put(
+  "/:surveyId/question/:questionId/move",
+  ClerkExpressRequireAuth(),
+  validate(placeQuestionSchema),
+  asyncHandler(quizController.moveQuestionHandler)
+);
+
 export default router;

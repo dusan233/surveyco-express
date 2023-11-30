@@ -88,6 +88,155 @@ const getSurveyPagesHandler = async (
   return res.status(HttpStatusCode.OK).json(formatedSurveyPages);
 };
 
+const moveQuestionHandler = async (
+  req: Request<SurveyQuestionParams, any, PlaceQuestionReqBody>,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+  const questionId = req.params.questionId;
+  const userId = req.auth.userId;
+
+  const [survey, question] = await Promise.all([
+    getSurvey(surveyId),
+    getQuestion(questionId),
+  ]);
+
+  if (!survey || !question)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId || question.quizId !== surveyId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const movedQuestion = await prisma.$transaction(async (tx) => {
+    if (req.body.questionId && req.body.position) {
+      const targetQuestionPromise = tx.question.findUnique({
+        where: { id: req.body.questionId },
+      });
+      const targetSurveyPagePromise = tx.surveyPage.findUnique({
+        where: { id: req.body.pageId },
+        include: {
+          _count: {
+            select: { questions: true },
+          },
+        },
+      });
+      const [targetQuestion, targetSurveyPage] = await Promise.all([
+        targetQuestionPromise,
+        targetSurveyPagePromise,
+      ]);
+
+      if (
+        !targetSurveyPage ||
+        !targetQuestion ||
+        targetQuestion?.surveyPageId !== req.body.pageId
+      ) {
+        //pitanje premesteno vrati error. Kao nesto nije u redu mozda da refresh podatke sa invalidate query.
+        //ili obrisano pitanje.
+        //ili obrisana stranica.
+        throw new AppError(
+          "",
+          "Not found",
+          HttpStatusCode.BAD_REQUEST,
+          "",
+          true
+        );
+      }
+
+      if (
+        targetSurveyPage._count.questions === 50 ||
+        targetSurveyPage._count.questions === 0
+      ) {
+        //stranica puna ne moze vise
+        throw new AppError(
+          "",
+          "Not found",
+          HttpStatusCode.BAD_REQUEST,
+          "",
+          true
+        );
+      }
+
+      let updatedQuestionNewNumber =
+        req.body.position === OperationPosition.after
+          ? targetQuestion.number
+          : targetQuestion.number - 1;
+
+      if (targetQuestion.number > question.number) {
+        await tx.question.updateMany({
+          where: {
+            quiz: { id: surveyId },
+            number: {
+              gt: question.number,
+              lte: updatedQuestionNewNumber,
+            },
+          },
+          data: {
+            number: {
+              decrement: 1,
+            },
+          },
+        });
+      } else {
+        updatedQuestionNewNumber =
+          req.body.position === OperationPosition.before
+            ? targetQuestion.number
+            : targetQuestion.number + 1;
+        await tx.question.updateMany({
+          where: {
+            quiz: { id: surveyId },
+            number: {
+              lt: question.number,
+              gte: updatedQuestionNewNumber,
+            },
+          },
+          data: {
+            number: {
+              increment: 1,
+            },
+          },
+        });
+      }
+
+      const movedQuestion = await tx.question.update({
+        where: { id: question.id },
+        data: {
+          number: updatedQuestionNewNumber,
+          surveyPage: {
+            connect: { id: req.body.pageId },
+          },
+        },
+      });
+
+      return movedQuestion;
+    } else {
+      const targetSurveyPage = await tx.surveyPage.findUnique({
+        where: { id: req.body.pageId },
+        include: {
+          _count: {
+            select: { questions: true },
+          },
+        },
+      });
+      if (!targetSurveyPage || targetSurveyPage._count.questions > 0)
+        throw new AppError(
+          "",
+          "Not found",
+          HttpStatusCode.BAD_REQUEST,
+          "",
+          true
+        );
+    }
+  });
+
+  return res.status(HttpStatusCode.OK).json(movedQuestion);
+};
+
 const copyQuestionHandler = async (
   req: Request<SurveyQuestionParams, any, PlaceQuestionReqBody>,
   res: Response
@@ -213,19 +362,6 @@ const copyQuestionHandler = async (
           },
         },
       });
-      // if(!targetSurveyPage) {
-      //   throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-      // }
-      // const pageBeforeTarget = await tx.surveyPage.findFirst({
-      //   where: {survey: {id: surveyId}, number: targetSurveyPage.number - 1},
-      //   include: {_count: {select: {questions: true}}}
-      // })
-      // const lastQuestionOnPageBeforeTarget= await tx.question.findFirst({
-      //   where: {quiz: {id: surveyId}, surveyPage: {id: pageBeforeTarget?.id}},
-      //   orderBy: {number: "desc"}
-      // })
-      // let newQuestionNumber = !pageBeforeTarget  ? 1 : lastQuestionOnPageBeforeTarget?.number + 1;
-
       if (!targetSurveyPage || targetSurveyPage._count.questions !== 0) {
         //stranica puna ne moze vise
         throw new AppError(
@@ -261,10 +397,20 @@ const copyQuestionHandler = async (
         orderBy: { number: "desc" },
       });
 
-      // if(!questionBeforeNewQuestion) {
-      //   //something went wrong
-      //   throw new AppError("", "Bad reqeust", HttpStatusCode.BAD_REQUEST, "", true);
-      // }
+      const newQuestionNumber = questionBeforeNewQuestion
+        ? questionBeforeNewQuestion.number + 1
+        : 1;
+      await tx.question.updateMany({
+        where: {
+          number: { gt: newQuestionNumber - 1 },
+          quiz: { id: surveyId },
+        },
+        data: {
+          number: {
+            increment: 1,
+          },
+        },
+      });
 
       const newQuestion = await tx.question.create({
         data: {
@@ -276,9 +422,7 @@ const copyQuestionHandler = async (
             },
           },
           surveyPage: { connect: { id: targetSurveyPage.id } },
-          number: questionBeforeNewQuestion
-            ? questionBeforeNewQuestion.number + 1
-            : 1,
+          number: newQuestionNumber,
           options:
             question.type !== QuestionType.textbox
               ? {
@@ -518,4 +662,5 @@ export default {
   deleteSurveyQuestionHandler,
   createSurveyPageHandler,
   copyQuestionHandler,
+  moveQuestionHandler,
 };

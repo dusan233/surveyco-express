@@ -41,11 +41,26 @@ export const multiChoiceQuestionSchema = questionSchema.extend({
     .nonempty("You must add at least one option."),
 });
 
-export const placeQuestionSchema = z.object({
-  pageId: z.string().optional(),
-  position: z.nativeEnum(OperationPosition),
-  questionId: z.string(),
-});
+export const placeQuestionSchema = z
+  .object({
+    pageId: z.string(),
+    position: z.nativeEnum(OperationPosition).optional(),
+    questionId: z.string().optional(),
+  })
+  .refine(
+    (input) => {
+      if (
+        (input.position && input.questionId) ||
+        (!input.position && !input.questionId)
+      )
+        return true;
+      return false;
+    },
+    {
+      message: "Both position and questionId should be included or omitted.",
+      path: ["position", "_", "questionId"],
+    }
+  );
 
 export const saveQuestionSchema = z.object({
   data: questionSchema,
