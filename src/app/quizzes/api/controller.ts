@@ -208,7 +208,7 @@ const moveQuestionHandler = async (
         data: {
           number: updatedQuestionNewNumber,
           surveyPage: {
-            connect: { id: req.body.pageId },
+            connect: { id: targetSurveyPage.id },
           },
         },
       });
@@ -231,6 +231,77 @@ const moveQuestionHandler = async (
           "",
           true
         );
+      const pagesWithQuestionCount = await tx.surveyPage.findMany({
+        where: {
+          survey: { id: surveyId },
+          number: { lt: targetSurveyPage.number },
+        },
+
+        include: {
+          _count: {
+            select: {
+              questions: true,
+            },
+          },
+        },
+        orderBy: {
+          number: "desc",
+        },
+      });
+      const firstPageBeforeWithQuestions = pagesWithQuestionCount.find(
+        (page) => page._count.questions > 0
+      )?.id;
+      const questionBeforeNewQuestion = await tx.question.findFirst({
+        where: { surveyPage: { id: firstPageBeforeWithQuestions } },
+        orderBy: { number: "desc" },
+      });
+
+      let movedQuestionNumber = questionBeforeNewQuestion!.number;
+
+      if (questionBeforeNewQuestion!.number > question.number) {
+        await tx.question.updateMany({
+          where: {
+            quiz: { id: surveyId },
+            number: {
+              gt: question.number,
+              lte: movedQuestionNumber,
+            },
+          },
+          data: {
+            number: {
+              decrement: 1,
+            },
+          },
+        });
+      } else {
+        movedQuestionNumber = questionBeforeNewQuestion!.number + 1;
+        await tx.question.updateMany({
+          where: {
+            quiz: { id: surveyId },
+            number: {
+              gte: movedQuestionNumber,
+              lt: question.number,
+            },
+          },
+          data: {
+            number: {
+              increment: 1,
+            },
+          },
+        });
+      }
+
+      const updatedQuestion = await tx.question.update({
+        where: { id: question.id },
+        data: {
+          number: movedQuestionNumber,
+          surveyPage: {
+            connect: { id: targetSurveyPage.id },
+          },
+        },
+      });
+
+      return updatedQuestion;
     }
   });
 
