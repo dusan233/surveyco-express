@@ -3,11 +3,13 @@ import prisma from "../../../prismaClient";
 import {
   CollectorType,
   CreateQuizData,
+  HttpStatusCode,
   MultiChoiceQuestion,
   QuestionType,
   Question as Questione,
   SaveSurveyResponseRequestBody,
 } from "../../../types/types";
+import { AppError } from "../../../lib/errors";
 
 export const createQuiz = async (userId: string, data: CreateQuizData) => {
   const newQuiz = await prisma.quiz.create({
@@ -119,15 +121,15 @@ export const deleteQuestion = async (question: {
   quizId: string;
 }) => {
   return await prisma.$transaction(async (tx) => {
-    const deletedQuestion = await tx.question.delete({
-      where: { id: question.id },
-    });
     await tx.questionOption.deleteMany({
       where: {
         question: {
           id: question.id,
         },
       },
+    });
+    const deletedQuestion = await tx.question.delete({
+      where: { id: question.id },
     });
 
     await updateQuestionsNumber(question.quizId, question.number, "decrement");
@@ -273,6 +275,129 @@ export const getSurveyPages = async (surveyId: string) => {
   });
 
   return pages;
+};
+
+export const updateQuestion = async (data: Questione) => {
+  const { id: questionId, ...questionData } = data;
+  return await prisma.question.update({
+    include: { options: true },
+    where: { id: questionId },
+    data: {
+      description: questionData.description,
+      type: questionData.type,
+      options:
+        questionData.type !== QuestionType.textbox
+          ? {
+              deleteMany: {
+                id: {
+                  notIn: (questionData as MultiChoiceQuestion).options
+                    .filter((option) => option.id !== undefined)
+                    .map((option) => option.id!),
+                },
+              },
+              upsert: (questionData as MultiChoiceQuestion).options.map(
+                (option) => ({
+                  where: { id: option.id || "dlsl" },
+                  create: {
+                    description: option.description,
+                  },
+                  update: { description: option.description },
+                })
+              ),
+            }
+          : undefined,
+    },
+  });
+};
+
+export const createQuestion = async (
+  data: Questione,
+  surveyId: string,
+  pageId: string
+) => {
+  const { id: questionId, ...questionData } = data;
+
+  const createdQuestion = await prisma.$transaction(async (tx) => {
+    const targetSurveyPage = await tx.surveyPage.findUnique({
+      where: { id: pageId },
+      include: {
+        _count: {
+          select: { questions: true },
+        },
+      },
+    });
+
+    let newQuestionNumber: number;
+    if (!targetSurveyPage || targetSurveyPage._count.questions === 50)
+      throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+    if (targetSurveyPage._count.questions === 0) {
+      const pagesWithQuestionCount = await tx.surveyPage.findMany({
+        where: {
+          survey: { id: surveyId },
+          number: { lt: targetSurveyPage.number },
+        },
+
+        include: {
+          _count: {
+            select: {
+              questions: true,
+            },
+          },
+        },
+        orderBy: {
+          number: "desc",
+        },
+      });
+      const firstPageBeforeWithQuestions = pagesWithQuestionCount.find(
+        (page) => page._count.questions > 0
+      )?.id;
+      const questionBeforeNewQuestion = await tx.question.findFirst({
+        where: { surveyPage: { id: firstPageBeforeWithQuestions } },
+        orderBy: { number: "desc" },
+      });
+      newQuestionNumber = questionBeforeNewQuestion
+        ? questionBeforeNewQuestion?.number + 1
+        : 1;
+    } else {
+      const targetSurveyPageLastQuestion = await tx.question.findFirst({
+        where: { surveyPage: { id: pageId } },
+        orderBy: { number: "desc" },
+      });
+      newQuestionNumber = targetSurveyPageLastQuestion!.number + 1;
+    }
+
+    await tx.question.updateMany({
+      where: { quiz: { id: surveyId }, number: { gte: newQuestionNumber } },
+      data: {
+        number: {
+          increment: 1,
+        },
+      },
+    });
+
+    return await tx.question.create({
+      include: {
+        options: true,
+      },
+      data: {
+        description: questionData.description,
+        type: questionData.type,
+        quiz: { connect: { id: surveyId } },
+        surveyPage: { connect: { id: pageId } },
+        number: newQuestionNumber,
+        options:
+          questionData.type !== QuestionType.textbox
+            ? {
+                create: (questionData as MultiChoiceQuestion).options.map(
+                  (option) => ({ description: option.description })
+                ),
+              }
+            : undefined,
+      },
+    });
+  });
+
+  return createdQuestion;
 };
 
 export const saveQuestion = async (

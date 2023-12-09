@@ -14,12 +14,14 @@ import {
 } from "../../app/quizzes/api/schemaValidation";
 
 export const validate =
-  (schema: ZodSchema) =>
+  (schema: ZodSchema, originalBody: boolean = false) =>
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       console.log(req.body);
       const dta = await schema.parseAsync(req.body);
-      req.body = dta;
+      if (!originalBody) {
+        req.body = dta;
+      }
       return next();
     } catch (error: any) {
       if (error instanceof ZodError) {

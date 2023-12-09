@@ -6,12 +6,14 @@ import {
   validateQuestionType,
 } from "../../../lib/middlewares";
 import {
+  createQuestionSchema,
   createQuizSchema,
   createSurveyCollectorSchema,
   placeQuestionSchema,
   questionSchema,
   saveQuestionSchema,
   saveSurveyResponseSchema,
+  updateQuestionSchema,
 } from "./schemaValidation";
 import quizController from "./controller";
 import prisma from "../../../prismaClient";
@@ -82,6 +84,20 @@ router.put(
   asyncHandler(quizController.saveQuestionHandler)
 );
 
+router.post(
+  "/:surveyId/question",
+  ClerkExpressRequireAuth(),
+  validate(createQuestionSchema, true),
+  validateQuestionType,
+  asyncHandler(quizController.createQuestionHandler)
+);
+router.put(
+  "/:surveyId/question",
+  ClerkExpressRequireAuth(),
+  validate(updateQuestionSchema, true),
+  validateQuestionType,
+  asyncHandler(quizController.updateQuestionHandler)
+);
 router.delete(
   "/:surveyId/question/:questionId",
   ClerkExpressRequireAuth(),
@@ -93,7 +109,6 @@ router.post(
   validate(placeQuestionSchema),
   asyncHandler(quizController.copyQuestionHandler)
 );
-
 router.put(
   "/:surveyId/question/:questionId/move",
   ClerkExpressRequireAuth(),

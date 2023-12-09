@@ -14,6 +14,8 @@ import {
   saveQuestion,
   saveSurveyResponse,
   updateQuestionsNumber,
+  createQuestion,
+  updateQuestion,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -514,8 +516,7 @@ const copyQuestionHandler = async (
 
 const saveQuestionHandler = async (
   req: Request<{ quizId: string }, any, { data: Question; pageId: string }>,
-  res: Response,
-  next: NextFunction
+  res: Response
 ) => {
   const quizId = req.params.quizId;
   const userId = req.auth.userId;
@@ -540,6 +541,64 @@ const saveQuestionHandler = async (
     req.body.pageId
   );
   return res.status(201).json(savedQuestion);
+};
+
+const updateQuestionHandler = async (
+  req: Request<SurveyParams, any, { data: Question; pageId: string }>,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+  const userId = req.auth.userId;
+
+  const survey = await getSurvey(surveyId);
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const updatedQuestion = await updateQuestion(req.body.data);
+
+  return res.status(HttpStatusCode.OK).json(updatedQuestion);
+};
+
+const createQuestionHandler = async (
+  req: Request<SurveyParams, any, { data: Question; pageId: string }>,
+  res: Response,
+  next: NextFunction
+) => {
+  console.log("ulahulaulahulaulahual");
+  const surveyId = req.params.surveyId;
+  const userId = req.auth.userId;
+
+  const survey = await getSurvey(surveyId);
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const createdQuestion = await createQuestion(
+    req.body.data,
+    surveyId,
+    req.body.pageId
+  );
+
+  return res.status(HttpStatusCode.CREATED).json(createdQuestion);
 };
 
 const getSurveyCollectorHandler = async (
@@ -582,7 +641,7 @@ const deleteSurveyQuestionHandler = async (
     );
 
   //here we deleting if question has no responses
-
+  console.log("pre brisanja bulje");
   await deleteQuestion(question);
 
   return res.sendStatus(HttpStatusCode.NO_CONTENT);
@@ -734,4 +793,6 @@ export default {
   createSurveyPageHandler,
   copyQuestionHandler,
   moveQuestionHandler,
+  createQuestionHandler,
+  updateQuestionHandler,
 };

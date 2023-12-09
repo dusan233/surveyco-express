@@ -67,7 +67,23 @@ export const saveQuestionSchema = z.object({
   pageId: z.string(),
 });
 
+export const updateQuestionSchema = z.object({
+  data: z.object({
+    type: z.nativeEnum(QuestionType),
+    description: z.string().min(1, "You must enter question description."),
+    id: z.string(),
+  }),
+});
+
+export const createQuestionSchema = z.object({
+  data: z.object({
+    type: z.nativeEnum(QuestionType),
+    description: z.string().min(1, "You must enter question description."),
+  }),
+  pageId: z.string(),
+});
+
 export const saveMultiChoiceQuestionSchema = z.object({
   data: multiChoiceQuestionSchema,
-  pageId: z.string(),
+  pageId: z.string().optional(),
 });
