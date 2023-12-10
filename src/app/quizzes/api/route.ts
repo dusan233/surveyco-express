@@ -43,6 +43,11 @@ router.get(
   "/:surveyId/pages",
   asyncHandler(quizController.getSurveyPagesHandler)
 );
+router.delete(
+  "/:surveyId/page/:pageId",
+  ClerkExpressRequireAuth(),
+  asyncHandler(quizController.deleteSurveyPageHandler)
+);
 
 //results
 router.get(

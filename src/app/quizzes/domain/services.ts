@@ -138,6 +138,72 @@ export const deleteQuestion = async (question: {
   });
 };
 
+export const deleteSurveyPage = async (surveyId: string, pageId: string) => {
+  return await prisma.$transaction(async (tx) => {
+    const targetSurveyPage = await tx.surveyPage.findUnique({
+      where: { id: pageId, survey: { id: surveyId } },
+      include: {
+        _count: {
+          select: {
+            questions: true,
+          },
+        },
+      },
+    });
+
+    if (!targetSurveyPage) {
+      throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+    }
+
+    if (targetSurveyPage?._count.questions !== 0) {
+      const deleteQuestions = await tx.question.findMany({
+        where: { quiz: { id: surveyId }, surveyPage: { id: pageId } },
+        select: { id: true, number: true },
+        orderBy: { number: "asc" },
+      });
+
+      const deleteQuestionsIds = deleteQuestions.map((q) => q.id);
+      const targetSurveyPageLastQuestion =
+        deleteQuestions[deleteQuestions.length - 1];
+
+      await tx.questionOption.deleteMany({
+        where: { question: { id: { in: deleteQuestionsIds } } },
+      });
+      const deletedQuestions = await tx.question.deleteMany({
+        where: { id: { in: deleteQuestionsIds } },
+      });
+      const deletedQuestionsCount = deletedQuestions.count;
+
+      await tx.question.updateMany({
+        where: {
+          quiz: { id: surveyId },
+          number: { gt: targetSurveyPageLastQuestion.number },
+        },
+        data: {
+          number: {
+            decrement: deletedQuestionsCount,
+          },
+        },
+      });
+    }
+
+    await tx.surveyPage.updateMany({
+      where: {
+        survey: { id: surveyId },
+        number: { gt: targetSurveyPage.number },
+      },
+      data: {
+        number: { decrement: 1 },
+      },
+    });
+    const deletedSurveyPage = await tx.surveyPage.delete({
+      where: { survey: { id: surveyId }, id: pageId },
+    });
+
+    return deletedSurveyPage;
+  });
+};
+
 export const createSurveyPage = async (surveyId: string) => {
   return await prisma.surveyPage.create({
     data: {

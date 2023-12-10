@@ -16,6 +16,7 @@ import {
   updateQuestionsNumber,
   createQuestion,
   updateQuestion,
+  deleteSurveyPage,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -28,6 +29,7 @@ import {
   Question,
   QuestionType,
   SaveSurveyResponseRequestBody,
+  SurveyPageParams,
   SurveyParams,
   SurveyQuestionParams,
 } from "../../../types/types";
@@ -779,6 +781,31 @@ const getSurveyQuestionsHandler = async (
   return res.status(HttpStatusCode.OK).json({ questions });
 };
 
+const deleteSurveyPageHandler = async (
+  req: Request<SurveyPageParams>,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+  const pageId = req.params.pageId;
+  const userId = req.auth.userId;
+  const survey = await getSurvey(surveyId);
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  await deleteSurveyPage(surveyId, pageId);
+  return res.sendStatus(HttpStatusCode.NO_CONTENT);
+};
+
 export default {
   createQuizHandler,
   getSurveyQuestionsHandler,
@@ -795,4 +822,5 @@ export default {
   moveQuestionHandler,
   createQuestionHandler,
   updateQuestionHandler,
+  deleteSurveyPageHandler,
 };

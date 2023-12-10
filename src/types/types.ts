@@ -19,6 +19,9 @@ export interface SurveyQuestionParams extends SurveyParams {
 export interface CollectorParams extends SurveyParams {
   collectorId: string;
 }
+export interface SurveyPageParams extends SurveyParams {
+  pageId: string;
+}
 
 export type PlaceQuestionReqBody = z.infer<typeof placeQuestionSchema>;
 
