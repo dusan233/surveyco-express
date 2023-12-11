@@ -9,6 +9,7 @@ import {
   createQuestionSchema,
   createQuizSchema,
   createSurveyCollectorSchema,
+  placePageSchema,
   placeQuestionSchema,
   questionSchema,
   saveQuestionSchema,
@@ -47,6 +48,12 @@ router.delete(
   "/:surveyId/page/:pageId",
   ClerkExpressRequireAuth(),
   asyncHandler(quizController.deleteSurveyPageHandler)
+);
+router.post(
+  "/:surveyId/page/:pageId/copy",
+  ClerkExpressRequireAuth(),
+  validate(placePageSchema),
+  asyncHandler(quizController.copySurveyPageHandler)
 );
 
 //results

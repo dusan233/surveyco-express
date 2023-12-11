@@ -1,17 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-import { z, AnyZodObject, ZodError, ZodSchema } from "zod";
+import { ZodError, ZodSchema } from "zod";
 import { AppError } from "../errors";
-import {
-  HttpStatusCode,
-  Question,
-  QuestionBase,
-  QuestionType,
-} from "../../types/types";
-import {
-  multiChoiceQuestionSchema,
-  questionSchema,
-  saveMultiChoiceQuestionSchema,
-} from "../../app/quizzes/api/schemaValidation";
+import { HttpStatusCode, Question, QuestionType } from "../../types/types";
+import { saveMultiChoiceQuestionSchema } from "../../app/quizzes/api/schemaValidation";
 
 export const validate =
   (schema: ZodSchema, originalBody: boolean = false) =>

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  placePageSchema,
   placeQuestionSchema,
   saveSurveyResponseSchema,
 } from "../app/quizzes/api/schemaValidation";
@@ -24,6 +25,7 @@ export interface SurveyPageParams extends SurveyParams {
 }
 
 export type PlaceQuestionReqBody = z.infer<typeof placeQuestionSchema>;
+export type PlacePageReqBody = z.infer<typeof placePageSchema>;
 
 export interface QuestionBase {
   id?: string;

@@ -17,6 +17,7 @@ import {
   createQuestion,
   updateQuestion,
   deleteSurveyPage,
+  copySurveyPage,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -25,6 +26,7 @@ import {
   HttpStatusCode,
   MultiChoiceQuestion,
   OperationPosition,
+  PlacePageReqBody,
   PlaceQuestionReqBody,
   Question,
   QuestionType,
@@ -806,6 +808,38 @@ const deleteSurveyPageHandler = async (
   return res.sendStatus(HttpStatusCode.NO_CONTENT);
 };
 
+const copySurveyPageHandler = async (
+  req: Request<SurveyPageParams, any, PlacePageReqBody>,
+  res: Response
+) => {
+  console.log("nikad ovde");
+  const surveyId = req.params.surveyId;
+  const sourcePageId = req.params.pageId;
+  const userId = req.auth.userId;
+  const survey = await getSurvey(surveyId);
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const createdPage = await copySurveyPage(
+    surveyId,
+    sourcePageId,
+    req.body.position,
+    req.body.pageId
+  );
+
+  return res.status(HttpStatusCode.CREATED).json(createdPage);
+};
+
 export default {
   createQuizHandler,
   getSurveyQuestionsHandler,
@@ -823,4 +857,5 @@ export default {
   createQuestionHandler,
   updateQuestionHandler,
   deleteSurveyPageHandler,
+  copySurveyPageHandler,
 };

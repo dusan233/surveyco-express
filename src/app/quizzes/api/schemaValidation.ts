@@ -62,6 +62,11 @@ export const placeQuestionSchema = z
     }
   );
 
+export const placePageSchema = z.object({
+  position: z.nativeEnum(OperationPosition),
+  pageId: z.string(),
+});
+
 export const saveQuestionSchema = z.object({
   data: questionSchema,
   pageId: z.string(),

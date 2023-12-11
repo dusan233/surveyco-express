@@ -5,6 +5,7 @@ import {
   CreateQuizData,
   HttpStatusCode,
   MultiChoiceQuestion,
+  OperationPosition,
   QuestionType,
   Question as Questione,
   SaveSurveyResponseRequestBody,
@@ -204,6 +205,120 @@ export const deleteSurveyPage = async (surveyId: string, pageId: string) => {
   });
 };
 
+export const copySurveyPage = async (
+  surveyId: string,
+  sourcePageId: string,
+  position: OperationPosition,
+  targetPageId: string
+) => {
+  return await prisma.$transaction(async (tx) => {
+    const sourcePagePromise = tx.surveyPage.findUnique({
+      where: { id: sourcePageId, surveyId: surveyId },
+      include: {
+        questions: {
+          include: {
+            options: true,
+          },
+        },
+      },
+    });
+    const targetPagePromise = tx.surveyPage.findUnique({
+      where: { id: targetPageId, surveyId: surveyId },
+    });
+
+    const [sourcePage, targetPage] = await Promise.all([
+      sourcePagePromise,
+      targetPagePromise,
+    ]);
+
+    if (!sourcePage || !targetPage)
+      throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+    const newPageNumber =
+      position === OperationPosition.after
+        ? targetPage.number + 1
+        : targetPage.number;
+
+    const pagesWithQuestionCount = await tx.surveyPage.findMany({
+      where: {
+        survey: { id: surveyId },
+        number: { lt: newPageNumber },
+      },
+
+      include: {
+        _count: {
+          select: {
+            questions: true,
+          },
+        },
+      },
+      orderBy: {
+        number: "desc",
+      },
+    });
+    const firstPageBeforeWithQuestions = pagesWithQuestionCount.find(
+      (page) => page._count.questions > 0
+    )?.id;
+    const questionBeforeFirstNewQuestion = await tx.question.findFirst({
+      where: { surveyPage: { id: firstPageBeforeWithQuestions } },
+      orderBy: { number: "desc" },
+    });
+
+    await tx.surveyPage.updateMany({
+      where: { number: { gte: newPageNumber } },
+      data: {
+        number: { increment: 1 },
+      },
+    });
+    await tx.question.updateMany({
+      where: {
+        number: {
+          gt: questionBeforeFirstNewQuestion
+            ? questionBeforeFirstNewQuestion.number
+            : 0,
+        },
+      },
+      data: {
+        number: {
+          increment: sourcePage.questions.length,
+        },
+      },
+    });
+
+    return await tx.surveyPage.create({
+      data: {
+        number: newPageNumber,
+        survey: {
+          connect: {
+            id: sourcePage.surveyId,
+          },
+        },
+        questions: {
+          create: sourcePage.questions.map((q, index) => ({
+            description: q.description,
+            type: q.type,
+            quiz: { connect: { id: q.quizId } },
+            number:
+              (questionBeforeFirstNewQuestion
+                ? questionBeforeFirstNewQuestion!.number
+                : 0) +
+              1 +
+              index,
+            options:
+              q.type !== QuestionType.textbox
+                ? {
+                    create: (q as MultiChoiceQuestion).options.map(
+                      (option) => ({ description: option.description })
+                    ),
+                  }
+                : undefined,
+          })),
+        },
+      },
+    });
+  });
+};
+
 export const createSurveyPage = async (surveyId: string) => {
   return await prisma.surveyPage.create({
     data: {
@@ -331,6 +446,7 @@ export const saveSurveyResponse = async (
 export const getSurveyPages = async (surveyId: string) => {
   const pages = await prisma.surveyPage.findMany({
     where: { survey: { id: surveyId } },
+    orderBy: { number: "asc" },
     include: {
       _count: {
         select: {
