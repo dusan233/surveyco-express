@@ -219,6 +219,7 @@ export const copySurveyPage = async (
           include: {
             options: true,
           },
+          orderBy: { number: "asc" },
         },
       },
     });
@@ -314,6 +315,134 @@ export const copySurveyPage = async (
                 : undefined,
           })),
         },
+      },
+    });
+  });
+};
+
+export const moveSurveyPage = async (
+  surveyId: string,
+  sourcePageId: string,
+  position: OperationPosition,
+  targetPageId: string
+) => {
+  return await prisma.$transaction(async (tx) => {
+    const sourcePagePromise = tx.surveyPage.findUnique({
+      where: { id: sourcePageId, surveyId: surveyId },
+      include: {
+        questions: {
+          include: {
+            options: true,
+          },
+          orderBy: { number: "asc" },
+        },
+      },
+    });
+    const targetPagePromise = tx.surveyPage.findUnique({
+      where: { id: targetPageId, surveyId: surveyId },
+    });
+
+    const [sourcePage, targetPage] = await Promise.all([
+      sourcePagePromise,
+      targetPagePromise,
+    ]);
+
+    if (!sourcePage || !targetPage)
+      throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+    const sourcePageNumIsBigger = sourcePage.number > targetPage.number;
+    const newPageNumber = sourcePageNumIsBigger
+      ? position === OperationPosition.after
+        ? targetPage.number + 1
+        : targetPage.number
+      : position === OperationPosition.after
+      ? targetPage.number
+      : targetPage.number - 1;
+
+    if (sourcePageNumIsBigger) {
+      await tx.surveyPage.updateMany({
+        where: {
+          number:
+            position === OperationPosition.after
+              ? {
+                  gt: targetPage.number,
+                  lt: sourcePage.number,
+                }
+              : {
+                  gte: targetPage.number,
+                  lt: sourcePage.number,
+                },
+        },
+        data: {
+          number: { increment: 1 },
+        },
+      });
+    } else {
+      await tx.surveyPage.updateMany({
+        where: {
+          number: {
+            gt: sourcePage.number,
+            lte:
+              position === OperationPosition.after
+                ? targetPage.number
+                : targetPage.number - 1,
+          },
+        },
+        data: {
+          number: { decrement: 1 },
+        },
+      });
+    }
+
+    if (sourcePageNumIsBigger) {
+      const pagesWithQuestionCount = await tx.surveyPage.findMany({
+        where: {
+          survey: { id: surveyId },
+          number: { lt: newPageNumber },
+        },
+
+        include: {
+          _count: {
+            select: {
+              questions: true,
+            },
+          },
+        },
+        orderBy: {
+          number: "desc",
+        },
+      });
+      const firstPageWithQuestionsBeforeTargetPage =
+        pagesWithQuestionCount.find((page) => page._count.questions > 0)?.id;
+      const startingPointQuestion = await tx.question.findFirst({
+        where: { surveyPage: { id: firstPageWithQuestionsBeforeTargetPage } },
+        orderBy: { number: "desc" },
+      });
+      const startingPointNumber = startingPointQuestion
+        ? startingPointQuestion.number
+        : 0;
+      await tx.question.updateMany({
+        where: { quizId: surveyId, number: { gt: startingPointNumber } },
+        data: {
+          number: { increment: sourcePage.questions.length },
+        },
+      });
+      await Promise.all(
+        sourcePage.questions.map((q, index) =>
+          tx.question.update({
+            where: { id: q.id },
+            data: {
+              number: startingPointNumber + index + 1,
+            },
+          })
+        )
+      );
+    }
+
+    await tx.surveyPage.update({
+      where: { id: sourcePageId },
+      data: {
+        number: newPageNumber,
       },
     });
   });
