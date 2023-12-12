@@ -18,6 +18,7 @@ import {
   updateQuestion,
   deleteSurveyPage,
   copySurveyPage,
+  moveSurveyPage,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -840,6 +841,38 @@ const copySurveyPageHandler = async (
   return res.status(HttpStatusCode.CREATED).json(createdPage);
 };
 
+const moveSurveyPageHandler = async (
+  req: Request<SurveyPageParams, any, PlacePageReqBody>,
+  res: Response
+) => {
+  console.log("kurac");
+  const surveyId = req.params.surveyId;
+  const sourcePageId = req.params.pageId;
+  const userId = req.auth.userId;
+  const survey = await getSurvey(surveyId);
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const movedPage = await moveSurveyPage(
+    surveyId,
+    sourcePageId,
+    req.body.position,
+    req.body.pageId
+  );
+
+  return res.status(HttpStatusCode.OK).json(movedPage);
+};
+
 export default {
   createQuizHandler,
   getSurveyQuestionsHandler,
@@ -858,4 +891,5 @@ export default {
   updateQuestionHandler,
   deleteSurveyPageHandler,
   copySurveyPageHandler,
+  moveSurveyPageHandler,
 };

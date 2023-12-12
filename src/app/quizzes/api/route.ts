@@ -58,7 +58,8 @@ router.post(
 router.put(
   "/:surveyId/page/:pageId/move",
   ClerkExpressRequireAuth(),
-  validate(placePageSchema)
+  validate(placePageSchema),
+  asyncHandler(quizController.moveSurveyPageHandler)
 );
 
 //results

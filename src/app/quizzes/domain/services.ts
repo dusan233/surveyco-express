@@ -340,6 +340,14 @@ export const moveSurveyPage = async (
     });
     const targetPagePromise = tx.surveyPage.findUnique({
       where: { id: targetPageId, surveyId: surveyId },
+      include: {
+        questions: {
+          include: {
+            options: true,
+          },
+          orderBy: { number: "asc" },
+        },
+      },
     });
 
     const [sourcePage, targetPage] = await Promise.all([
@@ -422,7 +430,13 @@ export const moveSurveyPage = async (
         ? startingPointQuestion.number
         : 0;
       await tx.question.updateMany({
-        where: { quizId: surveyId, number: { gt: startingPointNumber } },
+        where: {
+          quizId: surveyId,
+          number: {
+            gt: startingPointNumber,
+            lt: sourcePage.questions[0].number,
+          },
+        },
         data: {
           number: { increment: sourcePage.questions.length },
         },
@@ -437,9 +451,80 @@ export const moveSurveyPage = async (
           })
         )
       );
+    } else {
+      const pagesWithQuestionCount = await tx.surveyPage.findMany({
+        where: {
+          survey: { id: surveyId },
+          id: { not: sourcePage.id },
+          number: { lt: newPageNumber },
+        },
+
+        include: {
+          _count: {
+            select: {
+              questions: true,
+            },
+          },
+        },
+        orderBy: {
+          number: "desc",
+        },
+      });
+      const firstPageWithQuestionsBeforeSourcePage =
+        pagesWithQuestionCount.find(
+          (page) => page._count.questions > 0 && page.number < sourcePage.number
+        )?.id;
+      const startingPointQuestion = await tx.question.findFirst({
+        where: { surveyPage: { id: firstPageWithQuestionsBeforeSourcePage } },
+        orderBy: { number: "desc" },
+      });
+      const startingPointNumber = startingPointQuestion
+        ? startingPointQuestion.number
+        : 0;
+
+      const firstPageWithQuestionsBeforeMovedPage = pagesWithQuestionCount.find(
+        (page) => page._count.questions > 0 && page.number < newPageNumber
+      )?.id;
+      const startingPoint2Question = await tx.question.findFirst({
+        where: { surveyPage: { id: firstPageWithQuestionsBeforeMovedPage } },
+        orderBy: { number: "desc" },
+      });
+      const startPoint2 = startingPoint2Question
+        ? startingPoint2Question.number
+        : 0;
+
+      await tx.question.updateMany({
+        where: {
+          quizId: surveyId,
+          number: { gt: startingPointNumber, lte: startPoint2 },
+        },
+        data: {
+          number: { decrement: sourcePage.questions.length },
+        },
+      });
+
+      const startingPoint3Question = await tx.question.findFirst({
+        where: { surveyPage: { id: firstPageWithQuestionsBeforeMovedPage } },
+        orderBy: { number: "desc" },
+      });
+
+      const startPoint3 = startingPoint3Question
+        ? startingPoint3Question.number
+        : 0;
+
+      await Promise.all(
+        sourcePage.questions.map((q, index) =>
+          tx.question.update({
+            where: { id: q.id },
+            data: {
+              number: startPoint3 + index + 1,
+            },
+          })
+        )
+      );
     }
 
-    await tx.surveyPage.update({
+    return await tx.surveyPage.update({
       where: { id: sourcePageId },
       data: {
         number: newPageNumber,
