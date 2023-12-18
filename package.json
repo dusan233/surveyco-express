@@ -14,6 +14,7 @@
   "devDependencies": {
     "@types/cors": "^2.8.13",
     "@types/express": "^4.17.17",
+    "@types/express-session": "^1.17.10",
     "@types/node": "^20.4.9",
     "nodemon": "^3.0.1",
     "prisma": "^5.4.2",
@@ -24,8 +25,12 @@
     "@clerk/clerk-sdk-node": "^4.12.15",
     "@prisma/client": "^5.6.0",
     "body-parser": "^1.20.2",
+    "connect-pg-simple": "^9.0.1",
+    "connect-redis": "^7.1.0",
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "redis": "^4.6.11",
     "svix": "^1.13.0",
     "zod": "^3.22.4"
   }

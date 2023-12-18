@@ -9,48 +9,51 @@ import { type WebhookEvent } from "@clerk/clerk-sdk-node";
 import appRouter from "./appRouter";
 import { AppError, errorHandler } from "./lib/errors";
 
+import session from "express-session";
+import { redisStore } from "./redis";
+
 const app = express();
 
-//http://localhost:3000
 app.use(
   cors({
-    origin: "*",
+    credentials: true,
+    origin: "http://localhost:3000",
     optionsSuccessStatus: 200,
   })
 );
-
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.post("/create-user", async (req, res) => {
-  // const newUser = await prisma.user.create({
-  //   data: {
-  //     email: "dusan.jovanovicno.1@gmail.com",
-
-  //   },
-  // });
-
-  return res.json({ data: "asas" });
+app.use((req, res, next) => {
+  console.log(req.headers, "dusane na kurac");
+  next();
 });
 
-// app.post(
-//   "/create-quiz",
-//   ClerkExpressRequireAuth(),
-//   validate(createQuizSchema),
-//   async (req: RequireAuthProp<Request>, res) => {
-//     // const newQuiz = await prisma.quiz.create({
-//     //   data: {
-//     //     category: "Hello there quiz 1",
-//     //     creator: {
-//     //       connect: { id: "8271685a-50ef-44d7-bd42-54893944eeff" },
-//     //     },
-//     //   },
-//     // });
-//     console.log(req.auth);
+app.use(
+  session({
+    name: "kurac",
+    // store: redisStore,
+    resave: false, // required: force lightweight session keep alive (touch)
+    saveUninitialized: true, // recommended: only save session when data exists
+    secret: "session_secret",
+    cookie: {
+      secure: false,
+      httpOnly: false,
+      maxAge: 60 * 60 * 60,
+      domain: "http://localhost:3000",
+      sameSite: "none",
+    },
+  })
+);
 
-//     return res.json({ newQuizData: "new quiz created" });
-//   }
-// );
+// app.use((req, res, next) => {
+//   console.log(req.session.id, "dusane na kurac");
+//   next();
+// });
+
+app.post("/create-user", async (req, res) => {
+  return res.json({ data: "asas" });
+});
 
 app.use(appRouter);
 

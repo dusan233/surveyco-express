@@ -766,7 +766,7 @@ const getSurveyQuestionsHandler = async (
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
   const survey = await getSurvey(surveyId);
-
+  console.log(req.session.id, "ovo je samo da vidim da li sessija radi");
   if (!survey)
     throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
 
@@ -780,6 +780,11 @@ const getSurveyQuestionsHandler = async (
     );
 
   const questions = await getQuestions(surveyId, Number(req.query.page));
+  // res.on("finish", () => {
+  //   const setCookieHeader = res.get("Set-Cookie");
+  //   console.log(res.getHeaders());
+  //   console.log("Set-Cookie Header:", setCookieHeader);
+  // });
 
   return res.status(HttpStatusCode.OK).json({ questions });
 };
