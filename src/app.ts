@@ -8,52 +8,20 @@ import { Webhook } from "svix";
 import { type WebhookEvent } from "@clerk/clerk-sdk-node";
 import appRouter from "./appRouter";
 import { AppError, errorHandler } from "./lib/errors";
-
-import session from "express-session";
-import { redisStore } from "./redis";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
+app.use(cookieParser());
 app.use(
   cors({
     credentials: true,
-    origin: "http://localhost:3000",
+    origin: ["http://localhost:3000", "http://localhost:5173"],
     optionsSuccessStatus: 200,
   })
 );
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
-
-app.use((req, res, next) => {
-  console.log(req.headers, "dusane na kurac");
-  next();
-});
-
-app.use(
-  session({
-    name: "kurac",
-    // store: redisStore,
-    resave: false, // required: force lightweight session keep alive (touch)
-    saveUninitialized: true, // recommended: only save session when data exists
-    secret: "session_secret",
-    cookie: {
-      secure: false,
-      httpOnly: false,
-      maxAge: 60 * 60 * 60,
-      domain: "http://localhost:3000",
-      sameSite: "none",
-    },
-  })
-);
-
-// app.use((req, res, next) => {
-//   console.log(req.session.id, "dusane na kurac");
-//   next();
-// });
-
-app.post("/create-user", async (req, res) => {
-  return res.json({ data: "asas" });
-});
 
 app.use(appRouter);
 

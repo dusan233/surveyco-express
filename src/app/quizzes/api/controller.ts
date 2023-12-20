@@ -708,16 +708,23 @@ const saveSurveyResponseHandler = async (
   req: Request<CollectorParams, any, SaveSurveyResponseRequestBody>,
   res: Response
 ) => {
-  const surveyId = req.params.surveyId;
-  const collectorId = req.params.collectorId;
+  // const surveyId = req.params.surveyId;
+  // const collectorId = req.params.collectorId;
 
-  const collector = await getSurveyCollector(collectorId);
-  if (!collector || collector.surveyId !== surveyId)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+  // const collector = await getSurveyCollector(collectorId);
+  // if (!collector || collector.surveyId !== surveyId)
+  //   throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
 
-  const surveyResponse = await saveSurveyResponse(req.body, collectorId);
+  // const surveyResponse = await saveSurveyResponse(req.body, collectorId);
+  console.log(req.cookies.surveyResponses, "kolacic neophodni");
+  if (!req.cookies || !req.cookies.surveyResponses) {
+    res.cookie("surveyResponses", "cookie data", {
+      secure: false,
+      httpOnly: true,
+    });
+  }
 
-  return res.status(HttpStatusCode.ACCEPTED).json(surveyResponse);
+  return res.status(HttpStatusCode.ACCEPTED).json({ message: "dds" });
 };
 
 const getSurveyResponsesHandler = async (
@@ -766,7 +773,7 @@ const getSurveyQuestionsHandler = async (
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
   const survey = await getSurvey(surveyId);
-  console.log(req.session.id, "ovo je samo da vidim da li sessija radi");
+
   if (!survey)
     throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
 

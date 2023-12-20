@@ -80,9 +80,11 @@ router.get(
   "/:surveyId/collector/:collectorId",
   asyncHandler(quizController.getSurveyCollectorHandler)
 );
+
+//survey response
 router.put(
-  "/:surveyId/collector/:collectorId",
-  validate(saveSurveyResponseSchema),
+  "/:surveyId/response",
+  // validate(saveSurveyResponseSchema),
   asyncHandler(quizController.saveSurveyResponseHandler)
 );
 

@@ -592,7 +592,7 @@ export const saveSurveyResponse = async (
   collectorId: string
 ) => {
   // const questionResponses: { questionId: string; answer: string }[] = [];
-  const filteredResponses = data.responses.filter(
+  const filteredResponses = data.questionResponses.filter(
     (response) => response.answer.length !== 0
   );
   // filteredResponses.forEach((qResponse) =>
@@ -616,7 +616,7 @@ export const saveSurveyResponse = async (
       questionResponses: {
         create: filteredResponses.map((question) => ({
           question: {
-            connect: { id: question.id },
+            connect: { id: question.questionId },
           },
           answer: {
             create:
@@ -624,7 +624,7 @@ export const saveSurveyResponse = async (
                 ? [
                     {
                       question: {
-                        connect: { id: question.id },
+                        connect: { id: question.questionId },
                       },
                       textAnswer: question.answer as string,
                     },
@@ -633,7 +633,7 @@ export const saveSurveyResponse = async (
                 ? [
                     {
                       question: {
-                        connect: { id: question.id },
+                        connect: { id: question.questionId },
                       },
                       questionOption: {
                         connect: { id: question.answer },
@@ -642,7 +642,7 @@ export const saveSurveyResponse = async (
                   ]
                 : question.answer.map((answer) => ({
                     question: {
-                      connect: { id: question.id },
+                      connect: { id: question.questionId },
                     },
                     questionOption: {
                       connect: { id: answer },

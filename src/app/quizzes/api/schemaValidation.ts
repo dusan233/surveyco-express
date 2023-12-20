@@ -15,13 +15,14 @@ export const createSurveyCollectorSchema = z.object({
 });
 
 export const saveSurveyResponseSchema = z.object({
-  responses: z.array(
+  questionResponses: z.array(
     z.object({
-      id: z.string(),
+      questionId: z.string(),
       answer: z.string().or(z.array(z.string())),
       type: z.nativeEnum(QuestionType),
     })
   ),
+  collectorId: z.string(),
 });
 
 export const questionSchema = z.object({
