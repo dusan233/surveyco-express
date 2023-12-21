@@ -46,6 +46,7 @@ model Quiz {
   questions Question[]
   collectors SurveyCollector[]
   surveyPages SurveyPage[]
+  surveyResponses SurveyResponse[]
   creator User @relation(fields: [creatorId], references: [id])
   creatorId String
 }
@@ -76,6 +77,8 @@ model SurveyResponse {
   created_at DateTime @default(now())
   updated_at DateTime? @updatedAt
   collector SurveyCollector @relation(fields: [collectorId], references: [id])
+  survey Quiz @relation(fields: [surveyId], references: [id])
+  surveyId String
   collectorId String
   questionResponses QuestionResponse[]
 }

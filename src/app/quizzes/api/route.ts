@@ -84,7 +84,7 @@ router.get(
 //survey response
 router.put(
   "/:surveyId/response",
-  // validate(saveSurveyResponseSchema),
+  validate(saveSurveyResponseSchema),
   asyncHandler(quizController.saveSurveyResponseHandler)
 );
 

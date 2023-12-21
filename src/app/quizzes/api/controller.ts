@@ -705,22 +705,75 @@ const createSurveyCollectorHandler = async (
 };
 
 const saveSurveyResponseHandler = async (
-  req: Request<CollectorParams, any, SaveSurveyResponseRequestBody>,
+  req: Request<SurveyParams, any, SaveSurveyResponseRequestBody>,
   res: Response
 ) => {
-  // const surveyId = req.params.surveyId;
-  // const collectorId = req.params.collectorId;
+  const surveyId = req.params.surveyId;
+  const collectorId = req.body.collectorId;
 
-  // const collector = await getSurveyCollector(collectorId);
-  // if (!collector || collector.surveyId !== surveyId)
-  //   throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+  const collector = await getSurveyCollector(collectorId);
+  if (!collector || collector.surveyId !== surveyId)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
 
-  // const surveyResponse = await saveSurveyResponse(req.body, collectorId);
-  console.log(req.cookies.surveyResponses, "kolacic neophodni");
-  if (!req.cookies || !req.cookies.surveyResponses) {
-    res.cookie("surveyResponses", "cookie data", {
+  if (req.cookies && req.cookies.surveResponses) {
+    const surveyResponses: {
+      id: string;
+      surveyId: string;
+      collectorId: string;
+      submitted: boolean;
+    }[] = JSON.parse(req.cookies.surveyResponses);
+    const responseExists = surveyResponses.find(
+      (surveyRes) =>
+        surveyRes.collectorId === collectorId && surveyRes.surveyId === surveyId
+    );
+
+    if (responseExists) {
+      //different
+      const surveyResponse = await saveSurveyResponse(
+        req.body,
+        collectorId,
+        surveyId
+      );
+    } else {
+      const surveyResponse = await saveSurveyResponse(
+        req.body,
+        collectorId,
+        surveyId
+      );
+      const newSurveyResponse = {
+        id: surveyResponse.id,
+        surveyId,
+        collectorId,
+        submitted: false,
+      };
+
+      res.cookie(
+        "surveyResponses",
+        JSON.stringify([...surveyResponses, newSurveyResponse]),
+        {
+          secure: false,
+          httpOnly: true,
+          maxAge: 30 * 24 * 60 * 60,
+        }
+      );
+    }
+  } else {
+    const surveyResponse = await saveSurveyResponse(
+      req.body,
+      collectorId,
+      surveyId
+    );
+    const newSurveyResponse = {
+      id: surveyResponse.id,
+      surveyId,
+      collectorId,
+      submitted: false,
+    };
+
+    res.cookie("surveyResponses", JSON.stringify([newSurveyResponse]), {
       secure: false,
       httpOnly: true,
+      maxAge: 30 * 24 * 60 * 60,
     });
   }
 
