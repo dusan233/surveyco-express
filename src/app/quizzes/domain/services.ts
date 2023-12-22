@@ -594,11 +594,12 @@ export const saveSurveyResponse = async (
   surveyResponseId?: string
 ) => {
   const filledQuestionsResponses = data.questionResponses.filter(
-    (response) => response.answer.length !== 0
+    (response) => response.answer.length !== 0 && !response.id
   );
 
-  const surveyResponse = await prisma.surveyResponse.create({
-    data: {
+  const surveyResponse = await prisma.surveyResponse.upsert({
+    where: { id: surveyResponseId || "" },
+    create: {
       collector: {
         connect: {
           id: collectorId,
@@ -644,6 +645,83 @@ export const saveSurveyResponse = async (
                       connect: { id: answer },
                     },
                   })),
+          },
+        })),
+      },
+    },
+    update: {
+      questionResponses: {
+        upsert: filledQuestionsResponses.map((questionResponse) => ({
+          where: { id: questionResponse.id || "ds" },
+          create: {
+            question: {
+              connect: { id: questionResponse.questionId },
+            },
+            answer: {
+              create:
+                questionResponse.questionType === QuestionType.textbox
+                  ? [
+                      {
+                        question: {
+                          connect: { id: questionResponse.questionId },
+                        },
+                        textAnswer: questionResponse.answer as string,
+                      },
+                    ]
+                  : typeof questionResponse.answer === "string"
+                  ? [
+                      {
+                        question: {
+                          connect: { id: questionResponse.questionId },
+                        },
+                        questionOption: {
+                          connect: { id: questionResponse.answer },
+                        },
+                      },
+                    ]
+                  : questionResponse.answer.map((answer) => ({
+                      question: {
+                        connect: { id: questionResponse.questionId },
+                      },
+                      questionOption: {
+                        connect: { id: answer },
+                      },
+                    })),
+            },
+          },
+          update: {
+            answer: {
+              deleteMany: {},
+              create:
+                questionResponse.questionType === QuestionType.textbox
+                  ? [
+                      {
+                        question: {
+                          connect: { id: questionResponse.questionId },
+                        },
+                        textAnswer: questionResponse.answer as string,
+                      },
+                    ]
+                  : typeof questionResponse.answer === "string"
+                  ? [
+                      {
+                        question: {
+                          connect: { id: questionResponse.questionId },
+                        },
+                        questionOption: {
+                          connect: { id: questionResponse.answer },
+                        },
+                      },
+                    ]
+                  : questionResponse.answer.map((answer) => ({
+                      question: {
+                        connect: { id: questionResponse.questionId },
+                      },
+                      questionOption: {
+                        connect: { id: answer },
+                      },
+                    })),
+            },
           },
         })),
       },

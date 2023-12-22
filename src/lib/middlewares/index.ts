@@ -16,6 +16,7 @@ export const validate =
       return next();
     } catch (error: any) {
       if (error instanceof ZodError) {
+        console.log(error, "zod error");
         return next(
           new AppError("", "Invalid data", HttpStatusCode.BAD_REQUEST, "", true)
         );

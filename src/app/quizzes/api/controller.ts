@@ -732,7 +732,8 @@ const saveSurveyResponseHandler = async (
       const surveyResponse = await saveSurveyResponse(
         req.body,
         collectorId,
-        surveyId
+        surveyId,
+        responseExists.id
       );
     } else {
       const surveyResponse = await saveSurveyResponse(
