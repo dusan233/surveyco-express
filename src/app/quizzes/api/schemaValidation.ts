@@ -26,6 +26,10 @@ export const saveSurveyResponseSchema = z.object({
   collectorId: z.string(),
 });
 
+export const surveyResponseQuestionResponseSchema = z.object({
+  questionsIds: z.array(z.string()),
+});
+
 export const questionSchema = z.object({
   type: z.nativeEnum(QuestionType),
   description: z.string().min(1, "You must enter question description."),

@@ -19,6 +19,7 @@ import {
   deleteSurveyPage,
   copySurveyPage,
   moveSurveyPage,
+  getSurveyResponseQuestionResponses,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -35,6 +36,7 @@ import {
   SurveyPageParams,
   SurveyParams,
   SurveyQuestionParams,
+  SurveyResponseQuestionResponsesBody,
 } from "../../../types/types";
 import prisma from "../../../prismaClient";
 import { AppError } from "../../../lib/errors";
@@ -704,6 +706,42 @@ const createSurveyCollectorHandler = async (
   return res.status(HttpStatusCode.CREATED).json(collector);
 };
 
+const getSurveyResponseQuestionResponsesHandler = async (
+  req: Request<CollectorParams, any, SurveyResponseQuestionResponsesBody>,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+  const collectorId = req.params.collectorId;
+  const questionsIds = req.body.questionsIds;
+
+  if (req.cookies && req.cookies.surveResponses) {
+    const surveyResponses: {
+      id: string;
+      surveyId: string;
+      collectorId: string;
+      submitted: boolean;
+    }[] = JSON.parse(req.cookies.surveyResponses);
+
+    const responseExists = surveyResponses.find(
+      (response) =>
+        response.surveyId === surveyId && collectorId === response.collectorId
+    );
+
+    if (responseExists) {
+      const questionResponses = await getSurveyResponseQuestionResponses(
+        responseExists.id,
+        questionsIds
+      );
+
+      return res.status(HttpStatusCode.OK).json(questionResponses);
+    }
+
+    return res.status(HttpStatusCode.OK).json([]);
+  }
+
+  return res.status(HttpStatusCode.OK).json([]);
+};
+
 const saveSurveyResponseHandler = async (
   req: Request<SurveyParams, any, SaveSurveyResponseRequestBody>,
   res: Response
@@ -715,13 +753,13 @@ const saveSurveyResponseHandler = async (
   if (!collector || collector.surveyId !== surveyId)
     throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
 
-  if (req.cookies && req.cookies.surveResponses) {
+  if (req.signedCookies && req.signedCookies.surveyResponses) {
     const surveyResponses: {
       id: string;
       surveyId: string;
       collectorId: string;
       submitted: boolean;
-    }[] = JSON.parse(req.cookies.surveyResponses);
+    }[] = JSON.parse(req.signedCookies.surveyResponses);
     const responseExists = surveyResponses.find(
       (surveyRes) =>
         surveyRes.collectorId === collectorId && surveyRes.surveyId === surveyId
@@ -729,7 +767,7 @@ const saveSurveyResponseHandler = async (
 
     if (responseExists) {
       //different
-      const surveyResponse = await saveSurveyResponse(
+      await saveSurveyResponse(
         req.body,
         collectorId,
         surveyId,
@@ -754,7 +792,8 @@ const saveSurveyResponseHandler = async (
         {
           secure: false,
           httpOnly: true,
-          maxAge: 30 * 24 * 60 * 60,
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+          signed: true,
         }
       );
     }
@@ -774,11 +813,67 @@ const saveSurveyResponseHandler = async (
     res.cookie("surveyResponses", JSON.stringify([newSurveyResponse]), {
       secure: false,
       httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60,
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      signed: true,
     });
   }
 
   return res.status(HttpStatusCode.ACCEPTED).json({ message: "dds" });
+};
+
+const getSurveyQuestionsAndResponsesHandler = async (
+  req: Request<
+    CollectorParams,
+    any,
+    never,
+    { page?: string; collectorId?: string }
+  >,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+  const collectorId = req.query.collectorId;
+  const survey = await getSurvey(surveyId);
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  const questions = await getQuestions(surveyId, Number(req.query.page));
+
+  if (req.signedCookies && req.signedCookies.surveyResponses) {
+    const surveyResponses: {
+      id: string;
+      surveyId: string;
+      collectorId: string;
+      submitted: boolean;
+    }[] = JSON.parse(req.signedCookies.surveyResponses);
+
+    const responseExists = surveyResponses.find(
+      (response) =>
+        response.surveyId === surveyId && collectorId === response.collectorId
+    );
+
+    if (responseExists) {
+      const questionResponses = await getSurveyResponseQuestionResponses(
+        responseExists.id,
+        questions.map((q) => q.id)
+      );
+
+      return res.status(HttpStatusCode.OK).json({
+        questions,
+        questionResponses,
+      });
+    }
+
+    return res.status(HttpStatusCode.OK).json({
+      questions,
+      questionResponses: [],
+    });
+  }
+
+  return res.status(HttpStatusCode.OK).json({
+    questions,
+    questionResponses: [],
+  });
 };
 
 const getSurveyResponsesHandler = async (
@@ -958,4 +1053,6 @@ export default {
   deleteSurveyPageHandler,
   copySurveyPageHandler,
   moveSurveyPageHandler,
+  getSurveyResponseQuestionResponsesHandler,
+  getSurveyQuestionsAndResponsesHandler,
 };

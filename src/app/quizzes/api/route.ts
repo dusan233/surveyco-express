@@ -14,6 +14,7 @@ import {
   questionSchema,
   saveQuestionSchema,
   saveSurveyResponseSchema,
+  surveyResponseQuestionResponseSchema,
   updateQuestionSchema,
 } from "./schemaValidation";
 import quizController from "./controller";
@@ -86,6 +87,15 @@ router.put(
   "/:surveyId/response",
   validate(saveSurveyResponseSchema),
   asyncHandler(quizController.saveSurveyResponseHandler)
+);
+router.get(
+  "/:surveyId/responseData",
+  quizController.getSurveyQuestionsAndResponsesHandler
+);
+router.post(
+  "/:surveyId/response/questionResponses",
+  validate(surveyResponseQuestionResponseSchema),
+  asyncHandler(quizController.getSurveyResponseQuestionResponsesHandler)
 );
 
 //survey pages

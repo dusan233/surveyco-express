@@ -587,6 +587,23 @@ export const getSurveyCollector = async (collectorId: string) => {
   return collector;
 };
 
+export const getSurveyResponseQuestionResponses = async (
+  surveyResponseId: string,
+  questionIds: string[]
+) => {
+  return prisma.questionResponse.findMany({
+    include: {
+      answer: true,
+    },
+    where: {
+      surveyResponseId,
+      questionId: {
+        in: questionIds,
+      },
+    },
+  });
+};
+
 export const saveSurveyResponse = async (
   data: SaveSurveyResponseRequestBody,
   collectorId: string,
@@ -594,9 +611,12 @@ export const saveSurveyResponse = async (
   surveyResponseId?: string
 ) => {
   const filledQuestionsResponses = data.questionResponses.filter(
-    (response) => response.answer.length !== 0 && !response.id
+    (response) => response.answer.length !== 0
   );
 
+  const newQuestionsResponses = data.questionResponses.filter(
+    (response) => response.answer.length !== 0 && !response.id
+  );
   const surveyResponse = await prisma.surveyResponse.upsert({
     where: { id: surveyResponseId || "" },
     create: {
@@ -611,7 +631,7 @@ export const saveSurveyResponse = async (
         },
       },
       questionResponses: {
-        create: filledQuestionsResponses.map((questionResponse) => ({
+        create: newQuestionsResponses.map((questionResponse) => ({
           question: {
             connect: { id: questionResponse.questionId },
           },
@@ -652,7 +672,7 @@ export const saveSurveyResponse = async (
     update: {
       questionResponses: {
         upsert: filledQuestionsResponses.map((questionResponse) => ({
-          where: { id: questionResponse.id || "ds" },
+          where: { id: questionResponse.id || "" },
           create: {
             question: {
               connect: { id: questionResponse.questionId },

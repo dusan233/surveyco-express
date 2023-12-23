@@ -3,6 +3,7 @@ import {
   placePageSchema,
   placeQuestionSchema,
   saveSurveyResponseSchema,
+  surveyResponseQuestionResponseSchema,
 } from "../app/quizzes/api/schemaValidation";
 
 export interface CreateQuizData {
@@ -26,6 +27,9 @@ export interface SurveyPageParams extends SurveyParams {
 
 export type PlaceQuestionReqBody = z.infer<typeof placeQuestionSchema>;
 export type PlacePageReqBody = z.infer<typeof placePageSchema>;
+export type SurveyResponseQuestionResponsesBody = z.infer<
+  typeof surveyResponseQuestionResponseSchema
+>;
 
 export interface QuestionBase {
   id?: string;
