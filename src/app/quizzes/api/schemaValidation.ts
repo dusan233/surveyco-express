@@ -24,6 +24,7 @@ export const saveSurveyResponseSchema = z.object({
     })
   ),
   collectorId: z.string(),
+  submit: z.boolean().optional(),
 });
 
 export const surveyResponseQuestionResponseSchema = z.object({
