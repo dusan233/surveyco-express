@@ -774,6 +774,24 @@ const saveSurveyResponseHandler = async (
     );
   }
 
+  //check if questions got updated
+  const changeExists = await prisma.question.findFirst({
+    where: {
+      updated_at: {
+        gte: new Date(req.body.surveyResposneStartTime).toISOString(),
+      },
+    },
+  });
+
+  if (changeExists)
+    throw new AppError(
+      "",
+      "Resource changed!",
+      HttpStatusCode.CONFLICT,
+      "",
+      true
+    );
+
   const collector = await getSurveyCollector(collectorId);
   if (!collector || collector.surveyId !== surveyId)
     throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
@@ -801,7 +819,7 @@ const saveSurveyResponseHandler = async (
       });
 
       const filteredResponses = surveyResponses.filter(
-        (sRes) => (sRes.id = surveyResponse.id)
+        (sRes) => sRes.id !== surveyResponse.id
       );
       res.cookie("surveyResponses", JSON.stringify(filteredResponses), {
         secure: false,
