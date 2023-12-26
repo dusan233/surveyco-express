@@ -212,6 +212,8 @@ const moveQuestionHandler = async (
         });
       }
 
+      // await tx.$executeRaw`UPDATE public."Quiz" SET updated_at = CURRENT_TIMESTAMP AT TIME ZONE 'GMT' WHERE id = ${surveyId}`;
+
       const movedQuestion = await tx.question.update({
         where: { id: question.id },
         data: {
@@ -220,6 +222,11 @@ const moveQuestionHandler = async (
             connect: { id: targetSurveyPage.id },
           },
         },
+      });
+
+      await tx.quiz.update({
+        where: { id: surveyId },
+        data: { updated_at: movedQuestion.updated_at },
       });
 
       return movedQuestion;
@@ -775,8 +782,9 @@ const saveSurveyResponseHandler = async (
   }
 
   //check if questions got updated
-  const changeExists = await prisma.question.findFirst({
+  const changeExists = await prisma.quiz.findUnique({
     where: {
+      id: surveyId,
       updated_at: {
         gte: new Date(req.body.surveyResposneStartTime).toISOString(),
       },

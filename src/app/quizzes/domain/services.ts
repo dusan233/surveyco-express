@@ -604,6 +604,10 @@ export const getSurveyResponseQuestionResponses = async (
   });
 };
 
+export const checkIfSurveyResponseSubmitted = async (
+  data: SaveSurveyResponseRequestBody
+) => {};
+
 export const saveSurveyResponse = async (
   data: SaveSurveyResponseRequestBody,
   collectorId: string,
@@ -865,7 +869,7 @@ export const createQuestion = async (
       },
     });
 
-    return await tx.question.create({
+    const newQuestion = await tx.question.create({
       include: {
         options: true,
       },
@@ -885,6 +889,13 @@ export const createQuestion = async (
             : undefined,
       },
     });
+
+    await tx.quiz.update({
+      where: { id: surveyId },
+      data: { updated_at: newQuestion.created_at },
+    });
+
+    return newQuestion;
   });
 
   return createdQuestion;
