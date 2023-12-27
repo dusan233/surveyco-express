@@ -135,6 +135,11 @@ export const deleteQuestion = async (question: {
 
     await updateQuestionsNumber(question.quizId, question.number, "decrement");
 
+    await tx.quiz.update({
+      where: { id: question.quizId },
+      data: { updated_at: new Date() },
+    });
+
     return deletedQuestion;
   });
 };
@@ -199,6 +204,11 @@ export const deleteSurveyPage = async (surveyId: string, pageId: string) => {
     });
     const deletedSurveyPage = await tx.surveyPage.delete({
       where: { survey: { id: surveyId }, id: pageId },
+    });
+
+    await tx.quiz.update({
+      where: { id: surveyId },
+      data: { updated_at: new Date() },
     });
 
     return deletedSurveyPage;
@@ -286,7 +296,7 @@ export const copySurveyPage = async (
       },
     });
 
-    return await tx.surveyPage.create({
+    const createdPage = await tx.surveyPage.create({
       data: {
         number: newPageNumber,
         survey: {
@@ -317,6 +327,13 @@ export const copySurveyPage = async (
         },
       },
     });
+
+    await tx.quiz.update({
+      where: { id: surveyId },
+      data: { updated_at: createdPage.created_at },
+    });
+
+    return createdPage;
   });
 };
 
@@ -524,28 +541,44 @@ export const moveSurveyPage = async (
       );
     }
 
-    return await tx.surveyPage.update({
+    const movedPage = await tx.surveyPage.update({
       where: { id: sourcePageId },
       data: {
         number: newPageNumber,
       },
     });
+
+    await tx.quiz.update({
+      where: { id: surveyId },
+      data: { updated_at: movedPage.updated_at },
+    });
+
+    return movedPage;
   });
 };
 
 export const createSurveyPage = async (surveyId: string) => {
-  return await prisma.surveyPage.create({
-    data: {
-      number:
-        (await prisma.surveyPage.count({
-          where: { survey: { id: surveyId } },
-        })) + 1,
-      survey: {
-        connect: {
-          id: surveyId,
+  return prisma.$transaction(async (tx) => {
+    const createdPage = await prisma.surveyPage.create({
+      data: {
+        number:
+          (await prisma.surveyPage.count({
+            where: { survey: { id: surveyId } },
+          })) + 1,
+        survey: {
+          connect: {
+            id: surveyId,
+          },
         },
       },
-    },
+    });
+
+    await tx.quiz.update({
+      where: { id: surveyId },
+      data: { updated_at: createdPage.created_at },
+    });
+
+    return createdPage;
   });
 };
 
@@ -771,36 +804,46 @@ export const getSurveyPages = async (surveyId: string) => {
   return pages;
 };
 
-export const updateQuestion = async (data: Questione) => {
+export const updateQuestion = async (data: Questione, surveyId: string) => {
   const { id: questionId, ...questionData } = data;
-  return await prisma.question.update({
-    include: { options: true },
-    where: { id: questionId },
-    data: {
-      description: questionData.description,
-      type: questionData.type,
-      options:
-        questionData.type !== QuestionType.textbox
-          ? {
-              deleteMany: {
-                id: {
-                  notIn: (questionData as MultiChoiceQuestion).options
-                    .filter((option) => option.id !== undefined)
-                    .map((option) => option.id!),
-                },
-              },
-              upsert: (questionData as MultiChoiceQuestion).options.map(
-                (option) => ({
-                  where: { id: option.id || "dlsl" },
-                  create: {
-                    description: option.description,
+
+  return prisma.$transaction(async (tx) => {
+    const updatedQuestion = await tx.question.update({
+      include: { options: true },
+      where: { id: questionId },
+      data: {
+        description: questionData.description,
+        type: questionData.type,
+        options:
+          questionData.type !== QuestionType.textbox
+            ? {
+                deleteMany: {
+                  id: {
+                    notIn: (questionData as MultiChoiceQuestion).options
+                      .filter((option) => option.id !== undefined)
+                      .map((option) => option.id!),
                   },
-                  update: { description: option.description },
-                })
-              ),
-            }
-          : undefined,
-    },
+                },
+                upsert: (questionData as MultiChoiceQuestion).options.map(
+                  (option) => ({
+                    where: { id: option.id || "dlsl" },
+                    create: {
+                      description: option.description,
+                    },
+                    update: { description: option.description },
+                  })
+                ),
+              }
+            : undefined,
+      },
+    });
+
+    await tx.quiz.update({
+      where: { id: surveyId },
+      data: { updated_at: updatedQuestion.updated_at },
+    });
+
+    return updatedQuestion;
   });
 };
 

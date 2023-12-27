@@ -317,6 +317,11 @@ const moveQuestionHandler = async (
         },
       });
 
+      await tx.quiz.update({
+        where: { id: surveyId },
+        data: { updated_at: updatedQuestion.updated_at },
+      });
+
       return updatedQuestion;
     }
   });
@@ -439,6 +444,11 @@ const copyQuestionHandler = async (
         },
       });
 
+      await tx.quiz.update({
+        where: { id: surveyId },
+        data: { updated_at: newQuestion.created_at },
+      });
+
       return newQuestion;
     } else {
       const targetSurveyPage = await tx.surveyPage.findUnique({
@@ -521,6 +531,11 @@ const copyQuestionHandler = async (
         },
       });
 
+      await tx.quiz.update({
+        where: { id: surveyId },
+        data: { updated_at: newQuestion.created_at },
+      });
+
       return newQuestion;
     }
   });
@@ -578,7 +593,7 @@ const updateQuestionHandler = async (
       true
     );
 
-  const updatedQuestion = await updateQuestion(req.body.data);
+  const updatedQuestion = await updateQuestion(req.body.data, surveyId);
 
   return res.status(HttpStatusCode.OK).json(updatedQuestion);
 };
