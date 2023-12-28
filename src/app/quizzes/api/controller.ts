@@ -765,7 +765,12 @@ const getSurveyResponseQuestionResponsesHandler = async (
 };
 
 const saveSurveyResponseHandler = async (
-  req: Request<SurveyParams, any, SaveSurveyResponseRequestBody>,
+  req: Request<
+    SurveyParams,
+    any,
+    SaveSurveyResponseRequestBody,
+    { type: string }
+  >,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;
@@ -814,6 +819,11 @@ const saveSurveyResponseHandler = async (
       "",
       true
     );
+
+  if (collectorId === "preview")
+    return res
+      .status(HttpStatusCode.ACCEPTED)
+      .json({ submitted: !!req.body.submit });
 
   const collector = await getSurveyCollector(collectorId);
   if (!collector || collector.surveyId !== surveyId)
