@@ -1,14 +1,12 @@
 import { NextFunction, Request, Response } from "express";
 import {
   createQuiz,
-  createSurveyCollector,
   createSurveyPage,
   deleteQuestion,
   getQuestion,
   getQuestionResponses,
   getQuestions,
   getSurvey,
-  getSurveyCollector,
   getSurveyPages,
   getSurveyPageQuestionsCount,
   saveQuestion,
@@ -40,6 +38,7 @@ import {
 } from "../../../types/types";
 import prisma from "../../../prismaClient";
 import { AppError } from "../../../lib/errors";
+import { getSurveyCollector } from "../../collectors/domain/services";
 
 const createQuizHandler = async (
   req: Request<any, any, CreateQuizData>,
@@ -630,20 +629,6 @@ const createQuestionHandler = async (
   return res.status(HttpStatusCode.CREATED).json(createdQuestion);
 };
 
-const getSurveyCollectorHandler = async (
-  req: Request<CollectorParams>,
-  res: Response,
-  next: NextFunction
-) => {
-  console.log("ovde sam");
-  //revisit this after ur certein u can implement all the nessesery logic
-  const collectorId = req.params.collectorId;
-
-  const collector = await getSurveyCollector(collectorId);
-
-  return res.status(HttpStatusCode.ACCEPTED).json(collector);
-};
-
 const deleteSurveyQuestionHandler = async (
   req: Request<SurveyQuestionParams>,
   res: Response
@@ -699,33 +684,6 @@ const createSurveyPageHandler = async (
   const createdPage = await createSurveyPage(surveyId);
 
   return res.status(HttpStatusCode.CREATED).json(createdPage);
-};
-
-const createSurveyCollectorHandler = async (
-  req: Request<SurveyParams, any, { type: CollectorType }>,
-  res: Response,
-  next: NextFunction
-) => {
-  const surveyId = req.params.surveyId;
-  const collectorType = req.body.type;
-  const userId = req.auth.userId;
-  const survey = await getSurvey(surveyId);
-
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  const collector = await createSurveyCollector(collectorType, surveyId);
-
-  return res.status(HttpStatusCode.CREATED).json(collector);
 };
 
 const getSurveyResponseQuestionResponsesHandler = async (
@@ -1173,10 +1131,8 @@ const moveSurveyPageHandler = async (
 export default {
   createQuizHandler,
   getSurveyQuestionsHandler,
-  createSurveyCollectorHandler,
   saveQuestionHandler,
   getSurveyHandler,
-  getSurveyCollectorHandler,
   saveSurveyResponseHandler,
   getSurveyResponsesHandler,
   getSurveyPagesHandler,

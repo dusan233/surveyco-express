@@ -70,18 +70,6 @@ router.get(
   asyncHandler(quizController.getSurveyResponsesHandler)
 );
 
-//collector
-router.post(
-  "/:surveyId/collector",
-  ClerkExpressRequireAuth(),
-  validate(createSurveyCollectorSchema),
-  asyncHandler(quizController.createSurveyCollectorHandler)
-);
-router.get(
-  "/:surveyId/collector/:collectorId",
-  asyncHandler(quizController.getSurveyCollectorHandler)
-);
-
 //survey response
 router.put(
   "/:surveyId/response",
