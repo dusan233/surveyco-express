@@ -12,9 +12,9 @@ router.post(
   validate(createSurveyCollectorSchema),
   asyncHandler(collectorController.createSurveyCollectorHandler)
 );
-// router.get(
-//   "/:collectorId",
-//   asyncHandler(quizController.getSurveyCollectorHandler)
-// );
+router.get(
+  "/:collectorId",
+  asyncHandler(collectorController.getSurveyCollectorHandler)
+);
 
 export default router;

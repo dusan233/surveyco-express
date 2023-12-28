@@ -15,3 +15,11 @@ export const createSurveyCollector = async (
 
   return collector;
 };
+
+export const getSurveyCollector = async (collectorId: string) => {
+  const collector = await prisma.surveyCollector.findUnique({
+    where: { id: collectorId },
+  });
+
+  return collector;
+};

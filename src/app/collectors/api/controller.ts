@@ -1,12 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import { getSurvey } from "../../quizzes/domain/services";
 import {
+  CollectorParams,
   CollectorType,
   HttpStatusCode,
   SurveyParams,
 } from "../../../types/types";
 import { AppError } from "../../../lib/errors";
-import { createSurveyCollector } from "../domain/services";
+import { createSurveyCollector, getSurveyCollector } from "../domain/services";
 
 const createSurveyCollectorHandler = async (
   req: Request<SurveyParams, any, { type: CollectorType }>,
@@ -35,6 +36,21 @@ const createSurveyCollectorHandler = async (
   return res.status(HttpStatusCode.CREATED).json(collector);
 };
 
+const getSurveyCollectorHandler = async (
+  req: Request<CollectorParams>,
+  res: Response,
+  next: NextFunction
+) => {
+  console.log("ovde sam");
+
+  const collectorId = req.params.collectorId;
+
+  const collector = await getSurveyCollector(collectorId);
+
+  return res.status(HttpStatusCode.OK).json(collector);
+};
+
 export default {
   createSurveyCollectorHandler,
+  getSurveyCollectorHandler,
 };
