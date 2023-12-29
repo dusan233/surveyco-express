@@ -978,6 +978,10 @@ export const saveQuestion = async (
   return savedQuestion;
 };
 
+export const getSurveyCollectors = async (surveyId: string) => {
+  return await prisma.surveyCollector.findMany({ where: { surveyId } });
+};
+
 export const getSurveyPageQuestionsCount = async (
   surveyId: string,
   pageId: string

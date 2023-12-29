@@ -18,6 +18,7 @@ import {
   copySurveyPage,
   moveSurveyPage,
   getSurveyResponseQuestionResponses,
+  getSurveyCollectors,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -1096,6 +1097,31 @@ const copySurveyPageHandler = async (
   return res.status(HttpStatusCode.CREATED).json(createdPage);
 };
 
+const getSurveyCollectorsHandler = async (
+  req: Request<SurveyPageParams>,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+  const userId = req.auth.userId;
+  const survey = await getSurvey(surveyId);
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const collectors = await getSurveyCollectors(surveyId);
+
+  return res.status(HttpStatusCode.OK).json(collectors);
+};
+
 const moveSurveyPageHandler = async (
   req: Request<SurveyPageParams, any, PlacePageReqBody>,
   res: Response
@@ -1147,4 +1173,5 @@ export default {
   moveSurveyPageHandler,
   getSurveyResponseQuestionResponsesHandler,
   getSurveyQuestionsAndResponsesHandler,
+  getSurveyCollectorsHandler,
 };

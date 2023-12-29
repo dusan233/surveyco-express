@@ -68,6 +68,7 @@ model SurveyCollector {
   updated_at DateTime? @updatedAt
   status      String
   survey Quiz @relation(fields: [surveyId], references: [id])
+  name String
   surveyId String
   responses SurveyResponse[]
 }

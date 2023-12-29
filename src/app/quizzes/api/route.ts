@@ -39,6 +39,14 @@ router.post(
   validate(createQuizSchema),
   asyncHandler(quizController.createQuizHandler)
 );
+
+//collectors
+router.get(
+  "/:surveyId/collectors",
+  ClerkExpressRequireAuth(),
+  asyncHandler(quizController.getSurveyCollectorsHandler)
+);
+
 //survey pages
 
 router.get(
