@@ -10,11 +10,11 @@ import { AppError } from "../../../lib/errors";
 import { createSurveyCollector, getSurveyCollector } from "../domain/services";
 
 const createSurveyCollectorHandler = async (
-  req: Request<SurveyParams, any, { type: CollectorType }>,
+  req: Request<never, never, { type: CollectorType; surveyId: string }>,
   res: Response,
   next: NextFunction
 ) => {
-  const surveyId = req.params.surveyId;
+  const surveyId = req.body.surveyId;
   const collectorType = req.body.type;
   const userId = req.auth.userId;
   const survey = await getSurvey(surveyId);

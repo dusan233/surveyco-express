@@ -17,6 +17,7 @@ export const createSurveyCollector = async (
 
     return await prisma.surveyCollector.create({
       data: {
+        name: collectorName,
         type: collectorType,
         status: "open",
         survey: { connect: { id: surveyId } },
