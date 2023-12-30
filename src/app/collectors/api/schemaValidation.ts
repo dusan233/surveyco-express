@@ -9,3 +9,7 @@ export const createSurveyCollectorSchema = z.object({
 export const updateSurveyCollectorStatusSchema = z.object({
   status: z.nativeEnum(CollectorStatus),
 });
+
+export const updateSurveyCollectorSchema = z.object({
+  name: z.string(),
+});

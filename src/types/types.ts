@@ -5,7 +5,10 @@ import {
   saveSurveyResponseSchema,
   surveyResponseQuestionResponseSchema,
 } from "../app/quizzes/api/schemaValidation";
-import { updateSurveyCollectorStatusSchema } from "../app/collectors/api/schemaValidation";
+import {
+  updateSurveyCollectorSchema,
+  updateSurveyCollectorStatusSchema,
+} from "../app/collectors/api/schemaValidation";
 
 export interface CreateQuizData {
   title: string;
@@ -73,6 +76,9 @@ export type SaveSurveyResponseRequestBody = z.infer<
 >;
 export type UpdateCollectorStatusRequestBody = z.infer<
   typeof updateSurveyCollectorStatusSchema
+>;
+export type UpdateCollectorRequestBody = z.infer<
+  typeof updateSurveyCollectorSchema
 >;
 
 export enum HttpStatusCode {

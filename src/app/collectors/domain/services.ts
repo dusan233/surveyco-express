@@ -45,6 +45,18 @@ export const deleteSurveyCollector = async (collectorId: string) => {
   });
 };
 
+export const updateSurveyCollector = async (
+  name: string,
+  collectorId: string
+) => {
+  return await prisma.surveyCollector.update({
+    where: { id: collectorId },
+    data: {
+      name,
+    },
+  });
+};
+
 export const updateSurveyCollectorStatus = async (
   collectodId: string,
   status: "open" | "closed"

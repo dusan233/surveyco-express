@@ -5,6 +5,7 @@ import {
   CollectorType,
   HttpStatusCode,
   SurveyParams,
+  UpdateCollectorRequestBody,
   UpdateCollectorStatusRequestBody,
 } from "../../../types/types";
 import { AppError } from "../../../lib/errors";
@@ -12,6 +13,7 @@ import {
   createSurveyCollector,
   deleteSurveyCollector,
   getSurveyCollector,
+  updateSurveyCollector,
   updateSurveyCollectorStatus,
 } from "../domain/services";
 
@@ -108,10 +110,44 @@ const deleteSurveyCollectorHandler = async (
   return res.sendStatus(HttpStatusCode.NO_CONTENT);
 };
 
+const updateSurveyCollectorHandler = async (
+  req: Request<CollectorParams, never, UpdateCollectorRequestBody>,
+  res: Response
+) => {
+  const userId = req.auth.userId;
+  const collectorId = req.params.collectorId;
+  const updatedCollectorName = req.body.name;
+
+  const collector = await getSurveyCollector(collectorId);
+
+  if (!collector)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  const survey = await getSurvey(collector.surveyId);
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const updatedCollector = await updateSurveyCollector(
+    updatedCollectorName,
+    collectorId
+  );
+
+  return res.status(HttpStatusCode.OK).json(updatedCollector);
+};
+
 const getSurveyCollectorHandler = async (
   req: Request<CollectorParams>,
-  res: Response,
-  next: NextFunction
+  res: Response
 ) => {
   console.log("ovde sam");
 
@@ -127,4 +163,5 @@ export default {
   getSurveyCollectorHandler,
   deleteSurveyCollectorHandler,
   updateSurveyCollectorStatusHandler,
+  updateSurveyCollectorHandler,
 };

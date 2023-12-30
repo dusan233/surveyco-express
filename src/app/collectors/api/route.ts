@@ -3,6 +3,7 @@ import express from "express";
 import { asyncHandler, validate } from "../../../lib/middlewares";
 import {
   createSurveyCollectorSchema,
+  updateSurveyCollectorSchema,
   updateSurveyCollectorStatusSchema,
 } from "./schemaValidation";
 import collectorController from "./controller";
@@ -16,10 +17,16 @@ router.post(
   asyncHandler(collectorController.createSurveyCollectorHandler)
 );
 router.put(
-  "/:collectorId",
+  "/:collectorId/status",
   ClerkExpressRequireAuth(),
   validate(updateSurveyCollectorStatusSchema),
   asyncHandler(collectorController.updateSurveyCollectorStatusHandler)
+);
+router.put(
+  "/:collectorId",
+  ClerkExpressRequireAuth(),
+  validate(updateSurveyCollectorSchema),
+  asyncHandler(collectorController.updateSurveyCollectorHandler)
 );
 router.delete(
   "/:collectorId",
