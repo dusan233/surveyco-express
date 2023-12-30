@@ -5,12 +5,14 @@ import {
   CollectorType,
   HttpStatusCode,
   SurveyParams,
+  UpdateCollectorStatusRequestBody,
 } from "../../../types/types";
 import { AppError } from "../../../lib/errors";
 import {
   createSurveyCollector,
   deleteSurveyCollector,
   getSurveyCollector,
+  updateSurveyCollectorStatus,
 } from "../domain/services";
 
 const createSurveyCollectorHandler = async (
@@ -38,6 +40,41 @@ const createSurveyCollectorHandler = async (
   const collector = await createSurveyCollector(collectorType, surveyId);
 
   return res.status(HttpStatusCode.CREATED).json(collector);
+};
+
+const updateSurveyCollectorStatusHandler = async (
+  req: Request<CollectorParams, never, UpdateCollectorStatusRequestBody>,
+  res: Response
+) => {
+  const userId = req.auth.userId;
+  const collectorId = req.params.collectorId;
+  const status = req.body.status;
+
+  const collector = await getSurveyCollector(collectorId);
+
+  if (!collector)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  const survey = await getSurvey(collector.surveyId);
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const updatedCollector = await updateSurveyCollectorStatus(
+    collectorId,
+    status
+  );
+
+  return res.status(HttpStatusCode.OK).json(updatedCollector);
 };
 
 const deleteSurveyCollectorHandler = async (
@@ -89,4 +126,5 @@ export default {
   createSurveyCollectorHandler,
   getSurveyCollectorHandler,
   deleteSurveyCollectorHandler,
+  updateSurveyCollectorStatusHandler,
 };
