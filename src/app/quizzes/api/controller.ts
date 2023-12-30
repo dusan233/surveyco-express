@@ -1119,7 +1119,18 @@ const getSurveyCollectorsHandler = async (
 
   const collectors = await getSurveyCollectors(surveyId);
 
-  return res.status(HttpStatusCode.OK).json(collectors);
+  const formatedCollectors = collectors.map((collector) => ({
+    id: collector.id,
+    name: collector.name,
+    created_at: collector.created_at,
+    updated_at: collector.updated_at,
+    status: collector.status,
+    type: collector.type,
+    surveyId: collector.surveyId,
+    total_responses: collector._count.responses,
+  }));
+
+  return res.status(HttpStatusCode.OK).json(formatedCollectors);
 };
 
 const moveSurveyPageHandler = async (

@@ -12,6 +12,11 @@ router.post(
   validate(createSurveyCollectorSchema),
   asyncHandler(collectorController.createSurveyCollectorHandler)
 );
+router.delete(
+  "/:collectorId",
+  ClerkExpressRequireAuth(),
+  asyncHandler(collectorController.deleteSurveyCollectorHandler)
+);
 router.get(
   "/:collectorId",
   asyncHandler(collectorController.getSurveyCollectorHandler)

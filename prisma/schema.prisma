@@ -70,6 +70,7 @@ model SurveyCollector {
   survey Quiz @relation(fields: [surveyId], references: [id])
   name String
   surveyId String
+  deleted Boolean @default(false)
   responses SurveyResponse[]
 }
 

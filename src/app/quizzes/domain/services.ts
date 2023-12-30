@@ -979,7 +979,16 @@ export const saveQuestion = async (
 };
 
 export const getSurveyCollectors = async (surveyId: string) => {
-  return await prisma.surveyCollector.findMany({ where: { surveyId } });
+  return await prisma.surveyCollector.findMany({
+    where: { surveyId, deleted: { not: true } },
+    include: {
+      _count: {
+        select: {
+          responses: true,
+        },
+      },
+    },
+  });
 };
 
 export const getSurveyPageQuestionsCount = async (
