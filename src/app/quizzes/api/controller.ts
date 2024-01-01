@@ -4,7 +4,7 @@ import {
   createSurveyPage,
   deleteQuestion,
   getQuestion,
-  getQuestionResponses,
+  getQuestionsResponses,
   getQuestions,
   getSurvey,
   getSurveyPages,
@@ -972,11 +972,12 @@ const getSurveyQuestionsAndResponsesHandler = async (
 };
 
 const getSurveyResponsesHandler = async (
-  req: Request<SurveyParams>,
+  req: Request<SurveyParams, never, never, { page?: string }>,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
+  const pageNumber = Number(req.query.page);
 
   const survey = await getSurvey(surveyId);
   if (!survey)
@@ -991,22 +992,13 @@ const getSurveyResponsesHandler = async (
       true
     );
 
-  const questions = await getQuestions(surveyId, 1);
-  const questionResponsesData = await getQuestionResponses(questions);
-  const acctualData = questions.map((q, index) => {
-    return {
-      questionId: q.id,
-      results: questionResponsesData[index],
-      // .map((option: any) => ({
-      //   answer: option.answer,
-      //   answerCount: option._count.answer,
-      // })),
-    };
-  });
+  const questionsResults = await getQuestionsResponses(
+    surveyId,
+    isNaN(pageNumber) ? 1 : pageNumber
+  );
 
   return res.status(HttpStatusCode.OK).json({
-    ds: "",
-    results: acctualData,
+    questionsResults,
   });
 };
 
