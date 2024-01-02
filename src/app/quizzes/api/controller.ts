@@ -24,6 +24,7 @@ import {
   CollectorParams,
   CollectorType,
   CreateQuizData,
+  GetQuestionResultsRequestBody,
   HttpStatusCode,
   MultiChoiceQuestion,
   OperationPosition,
@@ -972,12 +973,11 @@ const getSurveyQuestionsAndResponsesHandler = async (
 };
 
 const getSurveyResponsesHandler = async (
-  req: Request<SurveyParams, never, never, { page?: string }>,
+  req: Request<SurveyParams, never, GetQuestionResultsRequestBody>,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
-  const pageNumber = Number(req.query.page);
 
   const survey = await getSurvey(surveyId);
   if (!survey)
@@ -994,12 +994,10 @@ const getSurveyResponsesHandler = async (
 
   const questionsResults = await getQuestionsResponses(
     surveyId,
-    isNaN(pageNumber) ? 1 : pageNumber
+    req.body.questionIds
   );
 
-  return res.status(HttpStatusCode.OK).json({
-    questionsResults,
-  });
+  return res.status(HttpStatusCode.OK).json(questionsResults);
 };
 
 const getSurveyQuestionsHandler = async (

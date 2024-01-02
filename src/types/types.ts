@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  getQuestionResultsSchema,
   placePageSchema,
   placeQuestionSchema,
   saveSurveyResponseSchema,
@@ -79,6 +80,9 @@ export type UpdateCollectorStatusRequestBody = z.infer<
 >;
 export type UpdateCollectorRequestBody = z.infer<
   typeof updateSurveyCollectorSchema
+>;
+export type GetQuestionResultsRequestBody = z.infer<
+  typeof getQuestionResultsSchema
 >;
 
 export enum HttpStatusCode {

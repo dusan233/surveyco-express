@@ -47,9 +47,13 @@ export const getSurvey = async (
 
 export const getQuestionsResponses = async (
   surveyId: string,
-  pageNumber: number
+  questionIds: string[]
 ) => {
-  const questions = await getQuestions(surveyId, pageNumber);
+  const questions = await prisma.question.findMany({
+    where: { id: { in: questionIds } },
+    orderBy: { number: "asc" },
+    include: { options: true },
+  });
 
   const totalSurveyResponses = await prisma.surveyResponse.count({
     where: { surveyId },
@@ -109,7 +113,7 @@ export const getQuestionsResponses = async (
         ...q,
         answeredCount: questionResponsesCount,
         skippedCount: totalSurveyResponses - questionResponsesCount,
-        options: q.options.map((qChoice) => {
+        choices: q.options.map((qChoice) => {
           const choiceResponsesCount =
             choiceResponses.find((cRes) => cRes.questionOptionId === qChoice.id)
               ?._count || 0;
