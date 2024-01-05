@@ -106,6 +106,7 @@ export const getQuestionsResponses = async (
             id: answer.id,
             questionResponseId: answer.questionResponseId,
             text: answer.textAnswer,
+            updated_at: answer.updated_at,
           })),
       };
     } else {
@@ -639,6 +640,10 @@ export const updateQuestionsNumber = async (
       },
     },
   });
+};
+
+export const getSurveyResponseCount = async (surveyId: string) => {
+  return await prisma.surveyResponse.count({ where: { surveyId } });
 };
 
 export const getSurveyResponseQuestionResponses = async (

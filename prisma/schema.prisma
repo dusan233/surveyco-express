@@ -91,6 +91,8 @@ model QuestionResponse {
   surveyResponseId String
   question Question @relation(fields: [questionId], references: [id])
   questionId String
+  created_at DateTime @default(now())
+  updated_at DateTime? @updatedAt
   answer QuestionAnswer[]
 }
 
@@ -102,6 +104,8 @@ model QuestionAnswer {
   questionOptionId String?
   question Question @relation(fields: [questionId], references: [id])
   questionId String
+  created_at DateTime @default(now())
+  updated_at DateTime? @updatedAt
   textAnswer String?
 }
 

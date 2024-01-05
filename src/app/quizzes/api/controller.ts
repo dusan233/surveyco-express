@@ -19,6 +19,7 @@ import {
   moveSurveyPage,
   getSurveyResponseQuestionResponses,
   getSurveyCollectors,
+  getSurveyResponseCount,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -72,7 +73,11 @@ const getSurveyHandler = async (
       true
     );
 
-  return res.status(200).json(survey);
+  const surveyResponsesCount = await getSurveyResponseCount(surveyId);
+
+  return res
+    .status(200)
+    .json({ ...survey, responses_count: surveyResponsesCount });
 };
 
 const getSurveyPagesHandler = async (
