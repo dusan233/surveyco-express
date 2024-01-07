@@ -4,7 +4,7 @@ import {
   createSurveyPage,
   deleteQuestion,
   getQuestion,
-  getQuestionsResponses,
+  getQuestionsResult,
   getQuestions,
   getSurvey,
   getSurveyPages,
@@ -977,7 +977,7 @@ const getSurveyQuestionsAndResponsesHandler = async (
   });
 };
 
-const getSurveyResponsesHandler = async (
+const getQuestionsResultHandler = async (
   req: Request<SurveyParams, never, GetQuestionResultsRequestBody>,
   res: Response
 ) => {
@@ -997,7 +997,7 @@ const getSurveyResponsesHandler = async (
       true
     );
 
-  const questionsResults = await getQuestionsResponses(
+  const questionsResults = await getQuestionsResult(
     surveyId,
     req.body.questionIds
   );
@@ -1166,7 +1166,7 @@ export default {
   saveQuestionHandler,
   getSurveyHandler,
   saveSurveyResponseHandler,
-  getSurveyResponsesHandler,
+  getQuestionsResultHandler,
   getSurveyPagesHandler,
   deleteSurveyQuestionHandler,
   createSurveyPageHandler,

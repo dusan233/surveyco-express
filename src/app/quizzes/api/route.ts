@@ -74,11 +74,13 @@ router.put(
 
 //results
 router.post(
-  "/:surveyId/results",
+  "/:surveyId/questions/result",
   ClerkExpressRequireAuth(),
   validate(getQuestionResultsSchema),
-  asyncHandler(quizController.getSurveyResponsesHandler)
+  asyncHandler(quizController.getQuestionsResultHandler)
 );
+
+router.get(":/surveyId/responses", ClerkExpressRequireAuth());
 
 //survey response
 router.put(

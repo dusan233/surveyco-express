@@ -45,7 +45,7 @@ export const getSurvey = async (
   return quiz;
 };
 
-export const getQuestionsResponses = async (
+export const getQuestionsResult = async (
   surveyId: string,
   questionIds: string[]
 ) => {
@@ -87,7 +87,13 @@ export const getQuestionsResponses = async (
       questions
         .filter((q) => q.type == QuestionType.textbox)
         .map((q) =>
-          prisma.questionAnswer.findMany({ where: { questionId: q.id } })
+          prisma.questionAnswer.findMany({
+            where: { questionId: q.id },
+            orderBy: {
+              created_at: "asc",
+            },
+            take: 20,
+          })
         )
     )
   ).flat();
