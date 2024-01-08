@@ -80,7 +80,11 @@ router.post(
   asyncHandler(quizController.getQuestionsResultHandler)
 );
 
-router.get(":/surveyId/responses", ClerkExpressRequireAuth());
+router.get(
+  "/:surveyId/responses",
+  ClerkExpressRequireAuth(),
+  asyncHandler(quizController.getSurveyResponsesHandler)
+);
 
 //survey response
 router.put(

@@ -45,6 +45,20 @@ export const getSurvey = async (
   return quiz;
 };
 
+export const getSurveyResponses = async (surveyId: string, page: number) => {
+  const take = 100;
+  const skip = (page - 1) * take;
+  return await prisma.surveyResponse.findMany({
+    where: { surveyId },
+    orderBy: { created_at: "desc" },
+    take: 100,
+    skip,
+    include: {
+      collector: true,
+    },
+  });
+};
+
 export const getQuestionsResult = async (
   surveyId: string,
   questionIds: string[]

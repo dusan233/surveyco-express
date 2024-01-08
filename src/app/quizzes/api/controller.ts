@@ -20,6 +20,7 @@ import {
   getSurveyResponseQuestionResponses,
   getSurveyCollectors,
   getSurveyResponseCount,
+  getSurveyResponses,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -1005,6 +1006,43 @@ const getQuestionsResultHandler = async (
   return res.status(HttpStatusCode.OK).json(questionsResults);
 };
 
+const getSurveyResponsesHandler = async (
+  req: Request<SurveyParams, never, never, { page?: string }>,
+  res: Response
+) => {
+  console.log("dqq");
+  const surveyId = req.params.surveyId;
+  const userId = req.auth.userId;
+  const survey = await getSurvey(surveyId);
+  const page = Number(req.query.page);
+  const pageNum = isNaN(page) ? 1 : page;
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const [surveyResponses, responsesCount] = await Promise.all([
+    getSurveyResponses(surveyId, pageNum),
+    getSurveyResponseCount(surveyId),
+  ]);
+  const nextPage = responsesCount > pageNum * 100 ? pageNum + 1 : undefined;
+
+  return res.status(HttpStatusCode.OK).json({
+    current_page: pageNum,
+    data: surveyResponses,
+    next_page: nextPage,
+    responses_count: responsesCount,
+  });
+};
+
 const getSurveyQuestionsHandler = async (
   req: Request<SurveyParams, any, never, { page?: string }>,
   res: Response
@@ -1180,4 +1218,5 @@ export default {
   getSurveyResponseQuestionResponsesHandler,
   getSurveyQuestionsAndResponsesHandler,
   getSurveyCollectorsHandler,
+  getSurveyResponsesHandler,
 };
