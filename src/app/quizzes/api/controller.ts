@@ -1007,7 +1007,7 @@ const getQuestionsResultHandler = async (
 };
 
 const getSurveyResponsesHandler = async (
-  req: Request<SurveyParams, never, never, { page?: string }>,
+  req: Request<SurveyParams, any, never, { page?: string; sort?: string }>,
   res: Response
 ) => {
   console.log("dqq");
@@ -1016,6 +1016,13 @@ const getSurveyResponsesHandler = async (
   const survey = await getSurvey(surveyId);
   const page = Number(req.query.page);
   const pageNum = isNaN(page) ? 1 : page;
+
+  const sort: { name: string; type: "asc" | "desc" } = req.query.sort
+    ? {
+        name: req.query.sort.split(":")[0],
+        type: req.query.sort.split(":")[1] as "asc" | "desc",
+      }
+    : { name: "updated_at", type: "desc" };
 
   if (!survey)
     throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
@@ -1030,15 +1037,16 @@ const getSurveyResponsesHandler = async (
     );
 
   const [surveyResponses, responsesCount] = await Promise.all([
-    getSurveyResponses(surveyId, pageNum),
+    getSurveyResponses(surveyId, pageNum, sort),
     getSurveyResponseCount(surveyId),
   ]);
-  const nextPage = responsesCount > pageNum * 100 ? pageNum + 1 : undefined;
+  const nextPage = responsesCount > pageNum * 3 ? pageNum + 1 : undefined;
 
   return res.status(HttpStatusCode.OK).json({
     current_page: pageNum,
     data: surveyResponses,
     next_page: nextPage,
+    total_pages: Math.ceil(responsesCount / 3),
     responses_count: responsesCount,
   });
 };

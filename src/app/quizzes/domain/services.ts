@@ -45,13 +45,17 @@ export const getSurvey = async (
   return quiz;
 };
 
-export const getSurveyResponses = async (surveyId: string, page: number) => {
-  const take = 100;
+export const getSurveyResponses = async (
+  surveyId: string,
+  page: number,
+  sort: { name: string; type: "asc" | "desc" }
+) => {
+  const take = 3;
   const skip = (page - 1) * take;
   return await prisma.surveyResponse.findMany({
     where: { surveyId },
-    orderBy: { created_at: "desc" },
-    take: 100,
+    orderBy: { [sort.name]: sort.type },
+    take,
     skip,
     include: {
       collector: true,
