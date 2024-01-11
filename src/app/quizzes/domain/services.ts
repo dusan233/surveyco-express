@@ -50,7 +50,7 @@ export const getSurveyResponses = async (
   page: number,
   sort: { name: string; type: "asc" | "desc" }
 ) => {
-  const take = 10;
+  const take = 30;
   const skip = (page - 1) * take;
   const orderBy =
     sort.name === "collector"

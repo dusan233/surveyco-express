@@ -989,13 +989,13 @@ const getSurveyResponsesHandler = async (
     getSurveyResponses(surveyId, pageNum, sort),
     getSurveyResponseCount(surveyId),
   ]);
-  const nextPage = responsesCount > pageNum * 10 ? pageNum + 1 : undefined;
+  const nextPage = responsesCount > pageNum * 30 ? pageNum + 1 : undefined;
 
   return res.status(HttpStatusCode.OK).json({
     current_page: pageNum,
     data: surveyResponses,
     next_page: nextPage,
-    total_pages: Math.ceil(responsesCount / 10),
+    total_pages: Math.ceil(responsesCount / 30),
     responses_count: responsesCount,
   });
 };
