@@ -21,6 +21,7 @@ import {
   getSurveyCollectors,
   getSurveyResponseCount,
   getSurveyResponses,
+  getSurveyResponse,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -955,6 +956,36 @@ const getQuestionsResultHandler = async (
   return res.status(HttpStatusCode.OK).json(questionsResults);
 };
 
+const getSurveyResponseHandler = async (
+  req: Request<SurveyParams & { responseId: string }>,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+  const responseId = req.params.responseId;
+  const userId = req.auth.userId;
+
+  const survey = await getSurvey(surveyId);
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const surveyResponse = await getSurveyResponse(surveyId, responseId);
+
+  if (!surveyResponse)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  return res.status(HttpStatusCode.OK).json(surveyResponse);
+};
+
 const getSurveyResponsesHandler = async (
   req: Request<SurveyParams, any, never, { page?: string; sort?: string }>,
   res: Response
@@ -1176,4 +1207,5 @@ export default {
   getSurveyQuestionsAndResponsesHandler,
   getSurveyCollectorsHandler,
   getSurveyResponsesHandler,
+  getSurveyResponseHandler,
 };

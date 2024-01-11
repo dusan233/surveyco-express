@@ -45,6 +45,18 @@ export const getSurvey = async (
   return quiz;
 };
 
+export const getSurveyResponse = async (
+  surveyId: string,
+  responseId: string
+) => {
+  return await prisma.surveyResponse.findUnique({
+    where: { id: responseId, surveyId },
+    include: {
+      collector: true,
+    },
+  });
+};
+
 export const getSurveyResponses = async (
   surveyId: string,
   page: number,
