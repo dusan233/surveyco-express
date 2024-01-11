@@ -82,6 +82,9 @@ model SurveyResponse {
   survey Quiz @relation(fields: [surveyId], references: [id])
   surveyId String
   collectorId String
+  status String
+  ip_address String
+  display_number Int
   questionResponses QuestionResponse[]
 }
 

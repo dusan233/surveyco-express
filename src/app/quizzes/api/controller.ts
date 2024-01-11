@@ -741,6 +741,9 @@ const saveSurveyResponseHandler = async (
 ) => {
   const surveyId = req.params.surveyId;
   const collectorId = req.body.collectorId;
+  const submit = req.body.submit ? true : false;
+
+  const responderIPAddress = req.ip;
   const blockedCollectorIds: string[] =
     (req.cookies &&
       req.cookies.blocked_col &&
@@ -787,9 +790,7 @@ const saveSurveyResponseHandler = async (
     );
 
   if (collectorId === "preview")
-    return res
-      .status(HttpStatusCode.ACCEPTED)
-      .json({ submitted: !!req.body.submit });
+    return res.status(HttpStatusCode.ACCEPTED).json({ submitted: submit });
 
   const collector = await getSurveyCollector(collectorId);
   if (!collector || collector.surveyId !== surveyId)
@@ -806,10 +807,12 @@ const saveSurveyResponseHandler = async (
       req.body,
       collectorId,
       surveyId,
+      submit,
+      responderIPAddress,
       responseExists.id
     );
 
-    if (req.body.submit) {
+    if (submit) {
       blockedCollectorIds.push(surveyResponse.collectorId);
       res.cookie("blocked_col", JSON.stringify(blockedCollectorIds), {
         secure: false,
@@ -834,14 +837,25 @@ const saveSurveyResponseHandler = async (
     const surveyResponse = await saveSurveyResponse(
       req.body,
       collectorId,
-      surveyId
+      surveyId,
+      submit,
+      responderIPAddress
     );
     const newSurveyResponse = {
       id: surveyResponse.id,
       surveyId,
       collectorId,
-      submitted: false,
+      submitted: submit,
     };
+
+    if (submit) {
+      blockedCollectorIds.push(surveyResponse.collectorId);
+      res.cookie("blocked_col", JSON.stringify(blockedCollectorIds), {
+        secure: false,
+        httpOnly: true,
+        maxAge: 30 * 24 * 60 * 60 * 1000 * 24,
+      });
+    }
 
     res.cookie(
       "surveyResponses",
@@ -854,73 +868,8 @@ const saveSurveyResponseHandler = async (
       }
     );
 
-    return res.status(HttpStatusCode.ACCEPTED).json({ submitted: false });
+    return res.status(HttpStatusCode.ACCEPTED).json({ submitted: submit });
   }
-
-  // if (req.signedCookies && req.signedCookies.surveyResponses) {
-  //   const surveyResponses: {
-  //     id: string;
-  //     surveyId: string;
-  //     collectorId: string;
-  //     submitted: boolean;
-  //   }[] = JSON.parse(req.signedCookies.surveyResponses);
-  //   const responseExists = surveyResponses.find(
-  //     (surveyRes) =>
-  //       surveyRes.collectorId === collectorId && surveyRes.surveyId === surveyId
-  //   );
-
-  //   if (responseExists) {
-  //     //different
-  //     await saveSurveyResponse(
-  //       req.body,
-  //       collectorId,
-  //       surveyId,
-  //       responseExists.id
-  //     );
-  //   } else {
-  //     const surveyResponse = await saveSurveyResponse(
-  //       req.body,
-  //       collectorId,
-  //       surveyId
-  //     );
-  //     const newSurveyResponse = {
-  //       id: surveyResponse.id,
-  //       surveyId,
-  //       collectorId,
-  //       submitted: false,
-  //     };
-
-  //     res.cookie(
-  //       "surveyResponses",
-  //       JSON.stringify([...surveyResponses, newSurveyResponse]),
-  //       {
-  //         secure: false,
-  //         httpOnly: true,
-  //         maxAge: 30 * 24 * 60 * 60 * 1000,
-  //         signed: true,
-  //       }
-  //     );
-  //   }
-  // } else {
-  //   const surveyResponse = await saveSurveyResponse(
-  //     req.body,
-  //     collectorId,
-  //     surveyId
-  //   );
-  //   const newSurveyResponse = {
-  //     id: surveyResponse.id,
-  //     surveyId,
-  //     collectorId,
-  //     submitted: false,
-  //   };
-
-  //   res.cookie("surveyResponses", JSON.stringify([newSurveyResponse]), {
-  //     secure: false,
-  //     httpOnly: true,
-  //     maxAge: 30 * 24 * 60 * 60 * 1000,
-  //     signed: true,
-  //   });
-  // }
 };
 
 const getSurveyQuestionsAndResponsesHandler = async (
@@ -1040,13 +989,13 @@ const getSurveyResponsesHandler = async (
     getSurveyResponses(surveyId, pageNum, sort),
     getSurveyResponseCount(surveyId),
   ]);
-  const nextPage = responsesCount > pageNum * 3 ? pageNum + 1 : undefined;
+  const nextPage = responsesCount > pageNum * 10 ? pageNum + 1 : undefined;
 
   return res.status(HttpStatusCode.OK).json({
     current_page: pageNum,
     data: surveyResponses,
     next_page: nextPage,
-    total_pages: Math.ceil(responsesCount / 3),
+    total_pages: Math.ceil(responsesCount / 10),
     responses_count: responsesCount,
   });
 };

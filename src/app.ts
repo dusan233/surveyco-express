@@ -12,6 +12,8 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 
+app.set("trust proxy", true);
+
 app.use(cookieParser("secrekey1239dkfsak00010"));
 app.use(
   cors({

@@ -50,11 +50,15 @@ export const getSurveyResponses = async (
   page: number,
   sort: { name: string; type: "asc" | "desc" }
 ) => {
-  const take = 3;
+  const take = 10;
   const skip = (page - 1) * take;
+  const orderBy =
+    sort.name === "collector"
+      ? { collector: { name: sort.type } }
+      : { [sort.name]: sort.type };
   return await prisma.surveyResponse.findMany({
     where: { surveyId },
-    orderBy: { [sort.name]: sort.type },
+    orderBy: [orderBy, { display_number: "asc" }],
     take,
     skip,
     include: {
@@ -695,6 +699,8 @@ export const saveSurveyResponse = async (
   data: SaveSurveyResponseRequestBody,
   collectorId: string,
   surveyId: string,
+  complete: boolean,
+  responderIPAddress: string,
   surveyResponseId?: string
 ) => {
   const filledQuestionsResponses = data.questionResponses.filter(
@@ -717,6 +723,10 @@ export const saveSurveyResponse = async (
           id: surveyId,
         },
       },
+      ip_address: responderIPAddress,
+      status: complete ? "complete" : "incomplete",
+      display_number:
+        (await prisma.surveyResponse.count({ where: { surveyId } })) + 1,
       questionResponses: {
         create: newQuestionsResponses.map((questionResponse) => ({
           question: {
@@ -757,6 +767,7 @@ export const saveSurveyResponse = async (
       },
     },
     update: {
+      status: complete ? "complete" : "incomplete",
       questionResponses: {
         upsert: filledQuestionsResponses.map((questionResponse) => ({
           where: { id: questionResponse.id || "" },
