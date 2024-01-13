@@ -91,6 +91,11 @@ router.get(
   ClerkExpressRequireAuth(),
   asyncHandler(quizController.getSurveyResponseHandler)
 );
+router.get(
+  "/:surveyId/response/:responseId/answers",
+  ClerkExpressRequireAuth(),
+  asyncHandler(quizController.getSurveyResponseAnswersHandler)
+);
 
 //survey response
 router.put(

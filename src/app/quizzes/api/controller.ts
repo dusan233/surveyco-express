@@ -873,6 +873,38 @@ const saveSurveyResponseHandler = async (
   }
 };
 
+const getSurveyResponseAnswersHandler = async (
+  req: Request<
+    SurveyParams & { responseId: string },
+    any,
+    never,
+    { page?: string }
+  >,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+  const responseId = req.params.responseId;
+  const page = Number(req.query.page);
+  const pageNum = isNaN(page) ? 1 : page;
+
+  const survey = await getSurvey(surveyId);
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  const questions = await getQuestions(surveyId, pageNum);
+
+  const questionResponses = await getSurveyResponseQuestionResponses(
+    responseId,
+    questions.map((q) => q.id)
+  );
+
+  return res.status(HttpStatusCode.OK).json({
+    questions,
+    questionResponses,
+  });
+};
+
 const getSurveyQuestionsAndResponsesHandler = async (
   req: Request<
     CollectorParams,
@@ -1208,4 +1240,5 @@ export default {
   getSurveyCollectorsHandler,
   getSurveyResponsesHandler,
   getSurveyResponseHandler,
+  getSurveyResponseAnswersHandler,
 };
