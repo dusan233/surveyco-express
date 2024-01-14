@@ -22,6 +22,7 @@ import {
   getSurveyResponseCount,
   getSurveyResponses,
   getSurveyResponse,
+  getSurveyPagesCount,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -44,6 +45,17 @@ import {
 import prisma from "../../../prismaClient";
 import { AppError } from "../../../lib/errors";
 import { getSurveyCollector } from "../../collectors/domain/services";
+import {
+  add,
+  addDays,
+  endOfDay,
+  format,
+  set,
+  setMilliseconds,
+  startOfDay,
+  sub,
+  subDays,
+} from "date-fns";
 
 const createQuizHandler = async (
   req: Request<any, any, CreateQuizData>,
@@ -75,11 +87,83 @@ const getSurveyHandler = async (
       true
     );
 
-  const surveyResponsesCount = await getSurveyResponseCount(surveyId);
+  const [surveyPageCount, surveyResponseCount] = await Promise.all([
+    getSurveyPagesCount(surveyId),
+    getSurveyResponseCount(surveyId),
+  ]);
 
-  return res
-    .status(200)
-    .json({ ...survey, responses_count: surveyResponsesCount });
+  return res.status(200).json({
+    ...survey,
+    responses_count: surveyResponseCount,
+    page_count: surveyPageCount,
+    question_count: 26,
+  });
+};
+
+const getSurveyResponsesVolumeHandler = async (
+  req: Request<SurveyParams>,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+  const userId = req.auth.userId;
+
+  const survey = await getSurvey(surveyId);
+  if (!survey || survey.creatorId !== userId)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  const currentDate = new Date();
+  const sevenDaysAgo = new Date(currentDate);
+  sevenDaysAgo.setDate(currentDate.getDate() - 30);
+
+  const surveyResponseCounts = await prisma.surveyResponse.groupBy({
+    by: ["created_at"],
+    _count: {
+      _all: true,
+    },
+    where: {
+      created_at: {
+        gte: sevenDaysAgo.toISOString(),
+        lte: currentDate.toISOString(),
+      },
+    },
+  });
+
+  const dateObjects = [];
+  const startDate = new Date(sevenDaysAgo);
+  const endDate = new Date(currentDate);
+
+  while (startDate <= endDate) {
+    const day = format(startDate, "yyyy-MM-dd");
+    const startDayDate = new Date(day);
+    const endDayDate = startOfDay(add(startDayDate, { days: 1 }));
+
+    // Set hours, minutes, and seconds to get the end of the day
+    endDayDate.setUTCHours(23);
+    endDayDate.setUTCMinutes(59);
+    endDayDate.setUTCSeconds(59);
+    endDayDate.setUTCMilliseconds(999);
+
+    // Subtract 1 millisecond to get the end of the previous day
+
+    let responseCount = 0;
+    surveyResponseCounts.forEach((resCount) => {
+      if (
+        resCount.created_at >= startDayDate &&
+        resCount.created_at <= endDayDate
+      ) {
+        responseCount += resCount._count._all;
+      }
+    });
+    dateObjects.push({
+      day: format(startDate, "yyyy-MM-dd"),
+      response_count: responseCount,
+    });
+
+    // Move to the next day
+    startDate.setDate(startDate.getDate() + 1);
+  }
+
+  return res.status(HttpStatusCode.OK).json(dateObjects);
 };
 
 const getSurveyPagesHandler = async (
@@ -1241,4 +1325,5 @@ export default {
   getSurveyResponsesHandler,
   getSurveyResponseHandler,
   getSurveyResponseAnswersHandler,
+  getSurveyResponsesVolumeHandler,
 };

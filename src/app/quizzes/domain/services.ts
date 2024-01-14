@@ -1087,6 +1087,12 @@ export const getSurveyCollectors = async (surveyId: string) => {
   });
 };
 
+export const getSurveyPagesCount = async (surveyId: string) => {
+  return await prisma.surveyPage.count({
+    where: { surveyId },
+  });
+};
+
 export const getSurveyPageQuestionsCount = async (
   surveyId: string,
   pageId: string

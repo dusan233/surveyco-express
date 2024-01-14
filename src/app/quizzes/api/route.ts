@@ -85,6 +85,11 @@ router.get(
   ClerkExpressRequireAuth(),
   asyncHandler(quizController.getSurveyResponsesHandler)
 );
+router.get(
+  "/:surveyId/responses/volume",
+  ClerkExpressRequireAuth(),
+  asyncHandler(quizController.getSurveyResponsesVolumeHandler)
+);
 
 router.get(
   "/:surveyId/response/:responseId",
