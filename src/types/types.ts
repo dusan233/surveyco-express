@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  createQuizSchema,
   getQuestionResultsSchema,
   placePageSchema,
   placeQuestionSchema,
@@ -11,10 +12,7 @@ import {
   updateSurveyCollectorStatusSchema,
 } from "../app/collectors/api/schemaValidation";
 
-export interface CreateQuizData {
-  title: string;
-  category: string;
-}
+export type CreateQuizData = z.infer<typeof createQuizSchema>;
 
 export interface SurveyParams {
   surveyId: string;
@@ -56,6 +54,14 @@ export enum QuestionType {
   checkboxes = "checkbox",
   dropdown = "dropdown",
   textbox = "textbox",
+}
+
+export enum SurveyCategory {
+  market_research = "market_research",
+  academic_research = "academic_research",
+  student_feedback = "student_feedback",
+  event_feedback = "event_feedback",
+  customer_feedback = "customer_feedback",
 }
 
 export enum OperationPosition {

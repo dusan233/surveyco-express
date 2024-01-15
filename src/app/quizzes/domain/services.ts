@@ -12,7 +12,7 @@ import {
 } from "../../../types/types";
 import { AppError } from "../../../lib/errors";
 
-export const createQuiz = async (userId: string, data: CreateQuizData) => {
+export const createSurvey = async (userId: string, data: CreateQuizData) => {
   const newQuiz = await prisma.quiz.create({
     data: {
       title: data.title,

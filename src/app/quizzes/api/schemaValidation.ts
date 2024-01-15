@@ -3,11 +3,12 @@ import {
   CollectorType,
   OperationPosition,
   QuestionType,
+  SurveyCategory,
 } from "../../../types/types";
 
 export const createQuizSchema = z.object({
-  title: z.string().min(1, "You must enter quiz title."),
-  category: z.string().min(1, "You must enter quiz title."),
+  title: z.string().min(1, "You must enter survey title."),
+  category: z.nativeEnum(SurveyCategory).or(z.literal("")),
 });
 
 export const createSurveyCollectorSchema = z.object({

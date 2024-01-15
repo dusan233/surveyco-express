@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import {
-  createQuiz,
+  createSurvey,
   createSurveyPage,
   deleteQuestion,
   getQuestion,
@@ -59,10 +59,9 @@ import {
 
 const createQuizHandler = async (
   req: Request<any, any, CreateQuizData>,
-  res: Response,
-  next: NextFunction
+  res: Response
 ) => {
-  const createdQuiz = await createQuiz(req.auth.userId, req.body);
+  const createdQuiz = await createSurvey(req.auth.userId, req.body);
   return res.status(201).json(createdQuiz);
 };
 
@@ -96,7 +95,7 @@ const getSurveyHandler = async (
     ...survey,
     responses_count: surveyResponseCount,
     page_count: surveyPageCount,
-    question_count: 26,
+    question_count: 25,
   });
 };
 
@@ -113,7 +112,7 @@ const getSurveyResponsesVolumeHandler = async (
 
   const currentDate = new Date();
   const sevenDaysAgo = new Date(currentDate);
-  sevenDaysAgo.setDate(currentDate.getDate() - 30);
+  sevenDaysAgo.setDate(currentDate.getDate() - 10);
 
   const surveyResponseCounts = await prisma.surveyResponse.groupBy({
     by: ["created_at"],
@@ -121,6 +120,7 @@ const getSurveyResponsesVolumeHandler = async (
       _all: true,
     },
     where: {
+      surveyId,
       created_at: {
         gte: sevenDaysAgo.toISOString(),
         lte: currentDate.toISOString(),
