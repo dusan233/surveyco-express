@@ -17,6 +17,9 @@ export type CreateQuizData = z.infer<typeof createQuizSchema>;
 export interface SurveyParams {
   surveyId: string;
 }
+export interface UserParams {
+  userId: string;
+}
 export interface SurveyQuestionParams extends SurveyParams {
   questionId: string;
 }
