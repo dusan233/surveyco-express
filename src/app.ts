@@ -9,6 +9,7 @@ import { type WebhookEvent } from "@clerk/clerk-sdk-node";
 import appRouter from "./appRouter";
 import { AppError, errorHandler } from "./lib/errors";
 import cookieParser from "cookie-parser";
+import "dotenv/config";
 
 const app = express();
 
