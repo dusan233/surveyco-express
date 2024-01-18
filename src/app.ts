@@ -10,6 +10,10 @@ import appRouter from "./appRouter";
 import { AppError, errorHandler } from "./lib/errors";
 import cookieParser from "cookie-parser";
 import "dotenv/config";
+import formidable from "formidable";
+import { promises as fs } from "fs";
+import { s3Client } from "./s3-client";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 const app = express();
 
@@ -26,6 +30,36 @@ app.use(
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+app.post("/dadli", async (req, res, next) => {
+  const form = formidable({});
+
+  const [fields, files] = await form.parse(req);
+
+  const file = files.image![0];
+  const filePath = file.filepath;
+  let rawData = await fs.readFile(filePath);
+
+  const result = await s3Client.send(
+    new PutObjectCommand({
+      Bucket: process.env.AWS_BUCKETNAME,
+      Key: "slicica.jpeg",
+      Body: rawData,
+    })
+  );
+
+  return res.json({ files, fields, result });
+
+  // form.parse(req, async (err, fields, files) => {
+  //   if (err) {
+  //     return next(err);
+  //   }
+  //   const filePath = files.image![0].filepath;
+  //   let rawData = await fs.readFile(filePath);
+  //   return res.json({ fields, files, dw: dwq[0], qw: dwq[1] });
+  // });
+
+  // return res.status(200).json({ res: "ds" });
+});
 app.use(appRouter);
 
 app.post(
