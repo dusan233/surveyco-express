@@ -3,6 +3,7 @@ import { ZodError, ZodSchema } from "zod";
 import { AppError } from "../errors";
 import { HttpStatusCode, Question, QuestionType } from "../../types/types";
 import { saveMultiChoiceQuestionSchema } from "../../app/quizzes/api/schemaValidation";
+import formidable, { Files } from "formidable";
 
 export const validate =
   (schema: ZodSchema, originalBody: boolean = false) =>
@@ -31,6 +32,26 @@ export const validate =
           )
         );
       }
+    }
+  };
+
+export interface RequestWithFiles extends Request {
+  files: Files;
+}
+
+export const validateQuestionData =
+  () => async (req: Request, res: Response, next: NextFunction) => {
+    const form = formidable({});
+
+    try {
+      const [fields, files] = await form.parse(req);
+
+      req.body = fields;
+      req.files = files;
+
+      return next();
+    } catch (err) {
+      return next(err);
     }
   };
 

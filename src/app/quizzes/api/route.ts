@@ -148,6 +148,13 @@ router.put(
   validateQuestionType,
   asyncHandler(quizController.updateQuestionHandler)
 );
+// router.put(
+//   "/:surveyId/question/v2",
+//   ClerkExpressRequireAuth(),
+//   validate(updateQuestionSchema, true),
+//   validateQuestionType,
+//   asyncHandler(quizController.updateQuestionHandler)
+// );
 router.delete(
   "/:surveyId/question/:questionId",
   ClerkExpressRequireAuth(),

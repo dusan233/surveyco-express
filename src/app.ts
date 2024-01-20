@@ -14,6 +14,7 @@ import formidable from "formidable";
 import { promises as fs } from "fs";
 import { s3Client } from "./s3-client";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { RequestWithFiles, validateQuestionData } from "./lib/middlewares";
 
 const app = express();
 
@@ -29,6 +30,14 @@ app.use(
 );
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+
+app.put(
+  "/tuku/:surveyId",
+  validateQuestionData(),
+  async (req: Request, res, next) => {
+    return res.status(200).json({ ds: "ds", body: req.body, files: req.files });
+  }
+);
 
 app.post("/dadli", async (req, res, next) => {
   const form = formidable({});
