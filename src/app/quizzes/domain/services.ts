@@ -406,6 +406,7 @@ export const copySurveyPage = async (
                 ? {
                     create: q.options.map((option) => ({
                       description: option.description,
+                      description_image: option.description_image,
                     })),
                   }
                 : undefined,
@@ -904,8 +905,12 @@ export const updateQuestion = async (data: Questione, surveyId: string) => {
                     where: { id: option.id || "dlsl" },
                     create: {
                       description: option.description,
+                      description_image: option.descriptionImage,
                     },
-                    update: { description: option.description },
+                    update: {
+                      description: option.description,
+                      description_image: option.descriptionImage,
+                    },
                   })
                 ),
               }
@@ -1002,7 +1007,10 @@ export const createQuestion = async (
           questionData.type !== QuestionType.textbox
             ? {
                 create: (questionData as MultiChoiceQuestion).options.map(
-                  (option) => ({ description: option.description })
+                  (option) => ({
+                    description: option.description,
+                    description_image: option.descriptionImage,
+                  })
                 ),
               }
             : undefined,

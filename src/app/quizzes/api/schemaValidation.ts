@@ -40,6 +40,7 @@ export const surveyResponseQuestionResponseSchema = z.object({
 export const questionSchema = z.object({
   type: z.nativeEnum(QuestionType),
   description: z.string().min(1, "You must enter question description."),
+  descriptionImage: z.string().or(z.null()),
   id: z.string().optional(),
 });
 
@@ -49,6 +50,7 @@ export const multiChoiceQuestionSchema = questionSchema.extend({
       z.object({
         id: z.string().optional(),
         description: z.string().min(1, "You must enter option text."),
+        descriptionImage: z.string().or(z.null()),
       })
     )
     .nonempty("You must add at least one option."),

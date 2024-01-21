@@ -531,6 +531,7 @@ const copyQuestionHandler = async (
               ? {
                   create: question.options.map((option) => ({
                     description: option.description,
+                    description_image: option.description_image,
                   })),
                 }
               : undefined,
@@ -619,6 +620,7 @@ const copyQuestionHandler = async (
               ? {
                   create: question.options.map((option) => ({
                     description: option.description,
+                    description_image: option.description_image,
                   })),
                 }
               : undefined,

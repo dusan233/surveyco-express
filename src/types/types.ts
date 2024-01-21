@@ -51,6 +51,7 @@ export type Question = QuestionBase | MultiChoiceQuestion;
 
 export interface Option {
   description: string;
+  descriptionImage: string | null;
   id?: string;
 }
 export enum QuestionType {
