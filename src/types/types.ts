@@ -41,6 +41,7 @@ export interface QuestionBase {
   id?: string;
   type: QuestionType;
   description: string;
+  descriptionImage: string | null;
 }
 export interface MultiChoiceQuestion extends QuestionBase {
   options: Option[];

@@ -14,7 +14,7 @@ import formidable from "formidable";
 import { promises as fs } from "fs";
 import { s3Client } from "./s3-client";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { RequestWithFiles, validateQuestionData } from "./lib/middlewares";
+import { v4 as uuid4 } from "uuid";
 
 const app = express();
 
@@ -31,14 +31,6 @@ app.use(
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.put(
-  "/tuku/:surveyId",
-  validateQuestionData(),
-  async (req: Request, res, next) => {
-    return res.status(200).json({ ds: "ds", body: req.body, files: req.files });
-  }
-);
-
 app.post("/dadli", async (req, res, next) => {
   const form = formidable({});
 
@@ -47,16 +39,26 @@ app.post("/dadli", async (req, res, next) => {
   const file = files.image![0];
   const filePath = file.filepath;
   let rawData = await fs.readFile(filePath);
+  const fileName = uuid4() + "." + file.originalFilename?.split(".")[1];
+  try {
+    const result = await s3Client.send(
+      new PutObjectCommand({
+        Bucket: process.env.AWS_BUCKETNAME,
+        Key: `survey/${"dkwqodqwko12321o3pdops"}/` + fileName,
+        Body: rawData,
+        ContentType: file.mimetype ?? "binady/octet-stream",
+      })
+    );
 
-  const result = await s3Client.send(
-    new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKETNAME,
-      Key: "slicica.jpeg",
-      Body: rawData,
-    })
-  );
-
-  return res.json({ files, fields, result });
+    return res.json({
+      files,
+      fields,
+      fileUrl: `https://surveyco-survey-files.s3.eu-central-1.amazonaws.com/survey/${"dkwqodqwko12321o3pdops"}/${fileName}`,
+    });
+  } catch (err) {
+    console.log(err);
+    next(err);
+  }
 
   // form.parse(req, async (err, fields, files) => {
   //   if (err) {

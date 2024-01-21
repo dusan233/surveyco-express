@@ -39,22 +39,6 @@ export interface RequestWithFiles extends Request {
   files: Files;
 }
 
-export const validateQuestionData =
-  () => async (req: Request, res: Response, next: NextFunction) => {
-    const form = formidable({});
-
-    try {
-      const [fields, files] = await form.parse(req);
-
-      req.body = fields;
-      req.files = files;
-
-      return next();
-    } catch (err) {
-      return next(err);
-    }
-  };
-
 export const validateQuestionType = async (
   req: Request<any, any, { data: Question; pageId: string }>,
   res: Response,

@@ -89,6 +89,7 @@ export const updateQuestionSchema = z.object({
   data: z.object({
     type: z.nativeEnum(QuestionType),
     description: z.string().min(1, "You must enter question description."),
+    descriptionImage: z.string().or(z.null()),
     id: z.string(),
   }),
 });
@@ -97,6 +98,7 @@ export const createQuestionSchema = z.object({
   data: z.object({
     type: z.nativeEnum(QuestionType),
     description: z.string().min(1, "You must enter question description."),
+    descriptionImage: z.string().or(z.null()),
   }),
   pageId: z.string(),
 });

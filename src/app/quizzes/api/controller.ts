@@ -518,6 +518,7 @@ const copyQuestionHandler = async (
         data: {
           description: question.description,
           type: question.type,
+          description_image: question.description_image,
           quiz: {
             connect: {
               id: surveyId,
@@ -528,9 +529,9 @@ const copyQuestionHandler = async (
           options:
             question.type !== QuestionType.textbox
               ? {
-                  create: (question as MultiChoiceQuestion).options.map(
-                    (option) => ({ description: option.description })
-                  ),
+                  create: question.options.map((option) => ({
+                    description: option.description,
+                  })),
                 }
               : undefined,
         },
@@ -605,6 +606,7 @@ const copyQuestionHandler = async (
         data: {
           description: question.description,
           type: question.type,
+          description_image: question.description_image,
           quiz: {
             connect: {
               id: surveyId,
@@ -615,9 +617,9 @@ const copyQuestionHandler = async (
           options:
             question.type !== QuestionType.textbox
               ? {
-                  create: (question as MultiChoiceQuestion).options.map(
-                    (option) => ({ description: option.description })
-                  ),
+                  create: question.options.map((option) => ({
+                    description: option.description,
+                  })),
                 }
               : undefined,
         },
@@ -695,7 +697,6 @@ const createQuestionHandler = async (
   res: Response,
   next: NextFunction
 ) => {
-  console.log("ulahulaulahulaulahual");
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
 
