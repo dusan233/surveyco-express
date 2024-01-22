@@ -21,12 +21,22 @@ export const getQuestionResultsSchema = z.object({
 
 export const saveSurveyResponseSchema = z.object({
   questionResponses: z.array(
-    z.object({
-      id: z.string().optional(),
-      questionId: z.string(),
-      answer: z.string().or(z.array(z.string())),
-      questionType: z.nativeEnum(QuestionType),
-    })
+    z
+      .object({
+        id: z.string().optional(),
+        questionId: z.string(),
+        required: z.boolean(),
+        answer: z.string().or(z.array(z.string())),
+        questionType: z.nativeEnum(QuestionType),
+      })
+      .refine((question) => {
+        if (question.questionType && question.required) {
+          if (question.answer === "") return false;
+        } else {
+          if (question.required && question.answer.length === 0) return false;
+        }
+        return true;
+      }, "Answer for this question is required")
   ),
   collectorId: z.string(),
   submit: z.boolean().optional(),
