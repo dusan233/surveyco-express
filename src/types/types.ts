@@ -42,6 +42,7 @@ export interface QuestionBase {
   type: QuestionType;
   description: string;
   descriptionImage: string | null;
+  required: boolean;
 }
 export interface MultiChoiceQuestion extends QuestionBase {
   options: Option[];

@@ -519,6 +519,7 @@ const copyQuestionHandler = async (
           description: question.description,
           type: question.type,
           description_image: question.description_image,
+          required: question.required,
           quiz: {
             connect: {
               id: surveyId,
@@ -607,6 +608,7 @@ const copyQuestionHandler = async (
         data: {
           description: question.description,
           type: question.type,
+          required: question.required,
           description_image: question.description_image,
           quiz: {
             connect: {

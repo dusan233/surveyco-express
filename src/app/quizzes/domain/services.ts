@@ -394,6 +394,7 @@ export const copySurveyPage = async (
             description: q.description,
             type: q.type,
             description_image: q.description_image,
+            required: q.required,
             quiz: { connect: { id: q.quizId } },
             number:
               (questionBeforeFirstNewQuestion
@@ -889,6 +890,7 @@ export const updateQuestion = async (data: Questione, surveyId: string) => {
       data: {
         description: questionData.description,
         description_image: questionData.descriptionImage,
+        required: questionData.required,
         type: questionData.type,
         options:
           questionData.type !== QuestionType.textbox
@@ -1000,6 +1002,7 @@ export const createQuestion = async (
         description: questionData.description,
         description_image: questionData.descriptionImage,
         type: questionData.type,
+        required: questionData.required,
         quiz: { connect: { id: surveyId } },
         surveyPage: { connect: { id: pageId } },
         number: newQuestionNumber,
@@ -1068,6 +1071,7 @@ export const saveQuestion = async (
     create: {
       description: questionData.description,
       description_image: questionData.descriptionImage,
+      required: questionData.required,
       type: questionData.type,
       quiz: { connect: { id: quizId } },
       surveyPage: { connect: { id: pageId } },

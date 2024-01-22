@@ -23,6 +23,8 @@ model Question {
   quizId String
   surveyPage SurveyPage @relation(fields: [surveyPageId], references: [id])
   surveyPageId String
+  required Boolean
+  randomize Boolean?
   options QuestionOption[]
   questionResponses QuestionResponse[]
   questionAnswers QuestionAnswer[]

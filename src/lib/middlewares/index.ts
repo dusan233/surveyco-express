@@ -52,6 +52,7 @@ export const validateQuestionType = async (
     return next();
   } catch (error) {
     if (error instanceof ZodError) {
+      console.log(error);
       return next(
         new AppError("", "Invalid data", HttpStatusCode.BAD_REQUEST, "", true)
       );

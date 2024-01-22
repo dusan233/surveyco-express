@@ -41,6 +41,7 @@ export const questionSchema = z.object({
   type: z.nativeEnum(QuestionType),
   description: z.string().min(1, "You must enter question description."),
   descriptionImage: z.string().or(z.null()),
+  required: z.boolean(),
   id: z.string().optional(),
 });
 
@@ -92,6 +93,7 @@ export const updateQuestionSchema = z.object({
     type: z.nativeEnum(QuestionType),
     description: z.string().min(1, "You must enter question description."),
     descriptionImage: z.string().or(z.null()),
+    required: z.boolean(),
     id: z.string(),
   }),
 });
@@ -101,6 +103,7 @@ export const createQuestionSchema = z.object({
     type: z.nativeEnum(QuestionType),
     description: z.string().min(1, "You must enter question description."),
     descriptionImage: z.string().or(z.null()),
+    required: z.boolean(),
   }),
   pageId: z.string(),
 });
