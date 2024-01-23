@@ -56,6 +56,7 @@ import {
   sub,
   subDays,
 } from "date-fns";
+import { randomizeArray } from "../../../lib/utils";
 
 const createQuizHandler = async (
   req: Request<any, any, CreateQuizData>,
@@ -527,6 +528,10 @@ const copyQuestionHandler = async (
           },
           surveyPage: { connect: { id: targetSurveyPage.id } },
           number: newQuestionNumber,
+          randomize:
+            question.type !== QuestionType.textbox
+              ? question.randomize
+              : undefined,
           options:
             question.type !== QuestionType.textbox
               ? {
@@ -617,6 +622,10 @@ const copyQuestionHandler = async (
           },
           surveyPage: { connect: { id: targetSurveyPage.id } },
           number: newQuestionNumber,
+          randomize:
+            question.type !== QuestionType.textbox
+              ? question.randomize
+              : undefined,
           options:
             question.type !== QuestionType.textbox
               ? {
@@ -1010,7 +1019,14 @@ const getSurveyQuestionsAndResponsesHandler = async (
   if (!survey)
     throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
 
-  const questions = await getQuestions(surveyId, Number(req.query.page));
+  const questions = (await getQuestions(surveyId, Number(req.query.page))).map(
+    (question) => {
+      if (question.randomize)
+        return { ...question, options: randomizeArray(question.options) };
+
+      return question;
+    }
+  );
 
   if (req.signedCookies && req.signedCookies.surveyResponses) {
     const surveyResponses: {

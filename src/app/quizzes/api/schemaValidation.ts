@@ -65,6 +65,7 @@ export const multiChoiceQuestionSchema = questionSchema.extend({
       })
     )
     .nonempty("You must add at least one option."),
+  randomize: z.boolean(),
 });
 
 export const placeQuestionSchema = z
@@ -104,6 +105,7 @@ export const updateQuestionSchema = z.object({
     description: z.string().min(1, "You must enter question description."),
     descriptionImage: z.string().or(z.null()),
     required: z.boolean(),
+    randomize: z.boolean().optional(),
     id: z.string(),
   }),
 });
@@ -114,6 +116,7 @@ export const createQuestionSchema = z.object({
     description: z.string().min(1, "You must enter question description."),
     descriptionImage: z.string().or(z.null()),
     required: z.boolean(),
+    randomize: z.boolean().optional(),
   }),
   pageId: z.string(),
 });

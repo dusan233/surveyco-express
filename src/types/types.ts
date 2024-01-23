@@ -46,6 +46,7 @@ export interface QuestionBase {
 }
 export interface MultiChoiceQuestion extends QuestionBase {
   options: Option[];
+  randomize: boolean;
 }
 
 export type Question = QuestionBase | MultiChoiceQuestion;

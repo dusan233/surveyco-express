@@ -402,6 +402,8 @@ export const copySurveyPage = async (
                 : 0) +
               1 +
               index,
+            randomize:
+              q.type !== QuestionType.textbox ? q.randomize : undefined,
             options:
               q.type !== QuestionType.textbox
                 ? {
@@ -892,6 +894,10 @@ export const updateQuestion = async (data: Questione, surveyId: string) => {
         description_image: questionData.descriptionImage,
         required: questionData.required,
         type: questionData.type,
+        randomize:
+          questionData.type !== QuestionType.textbox
+            ? (questionData as MultiChoiceQuestion).randomize
+            : undefined,
         options:
           questionData.type !== QuestionType.textbox
             ? {
@@ -1006,6 +1012,10 @@ export const createQuestion = async (
         quiz: { connect: { id: surveyId } },
         surveyPage: { connect: { id: pageId } },
         number: newQuestionNumber,
+        randomize:
+          questionData.type !== QuestionType.textbox
+            ? (questionData as MultiChoiceQuestion).randomize
+            : undefined,
         options:
           questionData.type !== QuestionType.textbox
             ? {
