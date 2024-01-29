@@ -44,7 +44,7 @@ model QuestionOption {
 model Quiz {
   id          String  @id @default(uuid())
   title       String
-  category    String
+  category    String?
   created_at DateTime @default(now())
   updated_at DateTime? @updatedAt
   questions Question[]

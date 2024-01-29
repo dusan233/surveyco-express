@@ -8,7 +8,7 @@ import {
 
 export const createQuizSchema = z.object({
   title: z.string().min(1, "You must enter survey title."),
-  category: z.nativeEnum(SurveyCategory).or(z.literal("")),
+  category: z.nativeEnum(SurveyCategory).optional(),
 });
 
 export const createSurveyCollectorSchema = z.object({
