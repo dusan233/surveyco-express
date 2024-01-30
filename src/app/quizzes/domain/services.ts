@@ -79,6 +79,33 @@ export const getSurveyResponses = async (
   });
 };
 
+export const getSurveyCollectors = async (
+  surveyId: string,
+  page: number,
+  sort: { column: string; type: "asc" | "desc" }
+) => {
+  const take = 15;
+  const skip = (page - 1) * take;
+  const orderBy =
+    sort.column === "total_responses"
+      ? { responses: { _count: sort.type } }
+      : { [sort.column]: sort.type };
+
+  return await prisma.surveyCollector.findMany({
+    where: { surveyId, deleted: { not: true } },
+    skip,
+    take,
+    orderBy: [orderBy, { created_at: "asc" }],
+    include: {
+      _count: {
+        select: {
+          responses: true,
+        },
+      },
+    },
+  });
+};
+
 export const getQuestionsResult = async (
   surveyId: string,
   questionIds: string[]
@@ -691,6 +718,10 @@ export const getSurveyResponseCount = async (surveyId: string) => {
   return await prisma.surveyResponse.count({ where: { surveyId } });
 };
 
+export const getSurveyCollectorCount = async (surveyId: string) => {
+  return await prisma.surveyCollector.count({ where: { surveyId } });
+};
+
 export const getSurveyResponseQuestionResponses = async (
   surveyResponseId: string,
   questionIds: string[]
@@ -1098,19 +1129,6 @@ export const saveQuestion = async (
   });
 
   return savedQuestion;
-};
-
-export const getSurveyCollectors = async (surveyId: string) => {
-  return await prisma.surveyCollector.findMany({
-    where: { surveyId, deleted: { not: true } },
-    include: {
-      _count: {
-        select: {
-          responses: true,
-        },
-      },
-    },
-  });
 };
 
 export const getSurveyPagesCount = async (surveyId: string) => {

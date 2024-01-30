@@ -23,6 +23,7 @@ import {
   getSurveyResponses,
   getSurveyResponse,
   getSurveyPagesCount,
+  getSurveyCollectorCount,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -1127,7 +1128,6 @@ const getSurveyResponsesHandler = async (
   req: Request<SurveyParams, any, never, { page?: string; sort?: string }>,
   res: Response
 ) => {
-  console.log("dqq");
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
   const survey = await getSurvey(surveyId);
@@ -1165,6 +1165,59 @@ const getSurveyResponsesHandler = async (
     next_page: nextPage,
     total_pages: Math.ceil(responsesCount / 30),
     responses_count: responsesCount,
+  });
+};
+
+const getSurveyCollectorsHandler = async (
+  req: Request<SurveyPageParams, any, never, { page?: string; sort?: string }>,
+  res: Response
+) => {
+  console.log("handling lifeee");
+  const surveyId = req.params.surveyId;
+  const userId = req.auth.userId;
+  const page = Number(req.query.page);
+  const pageNum = isNaN(page) ? 1 : page;
+  const survey = await getSurvey(surveyId);
+
+  const sort: { column: string; type: "asc" | "desc" } = req.query.sort
+    ? {
+        column: req.query.sort.split(":")[0],
+        type: req.query.sort.split(":")[1] as "asc" | "desc",
+      }
+    : { column: "updated_at", type: "desc" };
+
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const [collectors, collectorCount] = await Promise.all([
+    getSurveyCollectors(surveyId, pageNum, sort),
+    getSurveyCollectorCount(surveyId),
+  ]);
+
+  const formatedCollectors = collectors.map((collector) => ({
+    id: collector.id,
+    name: collector.name,
+    created_at: collector.created_at,
+    updated_at: collector.updated_at,
+    status: collector.status,
+    type: collector.type,
+    surveyId: collector.surveyId,
+    total_responses: collector._count.responses,
+  }));
+
+  return res.status(HttpStatusCode.OK).json({
+    data: formatedCollectors,
+    total_pages: Math.ceil(collectorCount / 15),
+    collector_count: collectorCount,
   });
 };
 
@@ -1253,42 +1306,6 @@ const copySurveyPageHandler = async (
   );
 
   return res.status(HttpStatusCode.CREATED).json(createdPage);
-};
-
-const getSurveyCollectorsHandler = async (
-  req: Request<SurveyPageParams>,
-  res: Response
-) => {
-  const surveyId = req.params.surveyId;
-  const userId = req.auth.userId;
-  const survey = await getSurvey(surveyId);
-
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  const collectors = await getSurveyCollectors(surveyId);
-
-  const formatedCollectors = collectors.map((collector) => ({
-    id: collector.id,
-    name: collector.name,
-    created_at: collector.created_at,
-    updated_at: collector.updated_at,
-    status: collector.status,
-    type: collector.type,
-    surveyId: collector.surveyId,
-    total_responses: collector._count.responses,
-  }));
-
-  return res.status(HttpStatusCode.OK).json(formatedCollectors);
 };
 
 const moveSurveyPageHandler = async (
