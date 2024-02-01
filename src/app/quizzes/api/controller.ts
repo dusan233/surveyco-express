@@ -24,6 +24,7 @@ import {
   getSurveyResponse,
   getSurveyPagesCount,
   getSurveyCollectorCount,
+  getSurveyQuestionCount,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -88,16 +89,18 @@ const getSurveyHandler = async (
       true
     );
 
-  const [surveyPageCount, surveyResponseCount] = await Promise.all([
-    getSurveyPagesCount(surveyId),
-    getSurveyResponseCount(surveyId),
-  ]);
+  const [surveyPageCount, surveyResponseCount, questionCount] =
+    await Promise.all([
+      getSurveyPagesCount(surveyId),
+      getSurveyResponseCount(surveyId),
+      getSurveyQuestionCount(surveyId),
+    ]);
 
   return res.status(200).json({
     ...survey,
     responses_count: surveyResponseCount,
     page_count: surveyPageCount,
-    question_count: 25,
+    question_count: questionCount,
   });
 };
 
@@ -1172,13 +1175,12 @@ const getSurveyCollectorsHandler = async (
   req: Request<SurveyPageParams, any, never, { page?: string; sort?: string }>,
   res: Response
 ) => {
-  console.log("handling lifeee");
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
   const page = Number(req.query.page);
   const pageNum = isNaN(page) ? 1 : page;
   const survey = await getSurvey(surveyId);
-
+  console.log("handling lifeee", survey, surveyId);
   const sort: { column: string; type: "asc" | "desc" } = req.query.sort
     ? {
         column: req.query.sort.split(":")[0],
