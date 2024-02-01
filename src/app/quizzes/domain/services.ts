@@ -83,9 +83,9 @@ export const getSurveyResponses = async (
 export const getSurveyCollectors = async (
   surveyId: string,
   page: number,
-  sort: { column: string; type: "asc" | "desc" }
+  sort: { column: string; type: "asc" | "desc" },
+  take: number
 ) => {
-  const take = 15;
   const skip = (page - 1) * take;
   const orderBy =
     sort.column === "total_responses"

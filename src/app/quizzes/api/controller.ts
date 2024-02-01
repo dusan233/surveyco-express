@@ -1175,7 +1175,12 @@ const getSurveyResponsesHandler = async (
 };
 
 const getSurveyCollectorsHandler = async (
-  req: Request<SurveyPageParams, any, never, { page?: string; sort?: string }>,
+  req: Request<
+    SurveyPageParams,
+    any,
+    never,
+    { page?: string; sort?: string; take?: string }
+  >,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;
@@ -1183,7 +1188,9 @@ const getSurveyCollectorsHandler = async (
   const page = Number(req.query.page);
   const pageNum = isNaN(page) ? 1 : page;
   const survey = await getSurvey(surveyId);
-  console.log("handling lifeee", survey, surveyId);
+  const take = Number(req.query.take);
+  const takeNum = isNaN(take) ? 15 : take;
+
   const sort: { column: string; type: "asc" | "desc" } = req.query.sort
     ? {
         column: req.query.sort.split(":")[0],
@@ -1204,7 +1211,7 @@ const getSurveyCollectorsHandler = async (
     );
 
   const [collectors, collectorCount] = await Promise.all([
-    getSurveyCollectors(surveyId, pageNum, sort),
+    getSurveyCollectors(surveyId, pageNum, sort, takeNum),
     getSurveyCollectorCount(surveyId),
   ]);
 
@@ -1221,7 +1228,7 @@ const getSurveyCollectorsHandler = async (
 
   return res.status(HttpStatusCode.OK).json({
     data: formatedCollectors,
-    total_pages: Math.ceil(collectorCount / 15),
+    total_pages: Math.ceil(collectorCount / takeNum),
     collector_count: collectorCount,
   });
 };
