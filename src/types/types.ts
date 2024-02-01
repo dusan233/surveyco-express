@@ -81,6 +81,12 @@ export enum CollectorStatus {
   closed = "closed",
 }
 
+export enum SurveyStatus {
+  open = "open",
+  close = "close",
+  draft = "draft",
+}
+
 export enum CollectorType {
   web_link = "web_link",
 }

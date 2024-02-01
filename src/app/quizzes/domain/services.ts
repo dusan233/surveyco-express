@@ -9,6 +9,7 @@ import {
   QuestionType,
   Question as Questione,
   SaveSurveyResponseRequestBody,
+  SurveyStatus,
 } from "../../../types/types";
 import { AppError } from "../../../lib/errors";
 
@@ -1135,6 +1136,26 @@ export const getSurveyPagesCount = async (surveyId: string) => {
   return await prisma.surveyPage.count({
     where: { surveyId },
   });
+};
+
+export const getSurveyStatus = async (surveyId: string) => {
+  const collectorsDistinctStatuses = (
+    await prisma.surveyCollector.findMany({
+      where: { deleted: false, surveyId },
+      distinct: ["status"],
+      select: { status: true },
+    })
+  ).map((collector) => collector.status);
+
+  if (collectorsDistinctStatuses.length === 0) {
+    return SurveyStatus.draft;
+  }
+
+  if (collectorsDistinctStatuses.includes(SurveyStatus.open)) {
+    return SurveyStatus.open;
+  } else {
+    return SurveyStatus.close;
+  }
 };
 
 export const getSurveyQuestionCount = async (surveyId: string) => {

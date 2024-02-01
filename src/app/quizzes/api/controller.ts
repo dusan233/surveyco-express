@@ -25,6 +25,7 @@ import {
   getSurveyPagesCount,
   getSurveyCollectorCount,
   getSurveyQuestionCount,
+  getSurveyStatus,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -89,18 +90,20 @@ const getSurveyHandler = async (
       true
     );
 
-  const [surveyPageCount, surveyResponseCount, questionCount] =
+  const [surveyPageCount, surveyResponseCount, questionCount, surveyStatus] =
     await Promise.all([
       getSurveyPagesCount(surveyId),
       getSurveyResponseCount(surveyId),
       getSurveyQuestionCount(surveyId),
+      getSurveyStatus(surveyId),
     ]);
 
-  return res.status(200).json({
+  return res.status(HttpStatusCode.OK).json({
     ...survey,
     responses_count: surveyResponseCount,
     page_count: surveyPageCount,
     question_count: questionCount,
+    survey_status: surveyStatus,
   });
 };
 
