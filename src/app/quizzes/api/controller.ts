@@ -1240,6 +1240,7 @@ const getSurveyQuestionsHandler = async (
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
   const survey = await getSurvey(surveyId);
+  const page = Number(req.query.page);
 
   if (!survey)
     throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
@@ -1253,14 +1254,14 @@ const getSurveyQuestionsHandler = async (
       true
     );
 
-  const questions = await getQuestions(surveyId, Number(req.query.page));
+  const questions = await getQuestions(surveyId, page);
   // res.on("finish", () => {
   //   const setCookieHeader = res.get("Set-Cookie");
   //   console.log(res.getHeaders());
   //   console.log("Set-Cookie Header:", setCookieHeader);
   // });
 
-  return res.status(HttpStatusCode.OK).json({ questions });
+  return res.status(HttpStatusCode.OK).json({ questions, page });
 };
 
 const deleteSurveyPageHandler = async (
