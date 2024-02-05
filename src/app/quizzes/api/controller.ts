@@ -1022,18 +1022,17 @@ const getSurveyQuestionsAndResponsesHandler = async (
   const surveyId = req.params.surveyId;
   const collectorId = req.query.collectorId;
   const survey = await getSurvey(surveyId);
+  const page = Number(req.query.page);
 
   if (!survey)
     throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
 
-  const questions = (await getQuestions(surveyId, Number(req.query.page))).map(
-    (question) => {
-      if (question.randomize)
-        return { ...question, options: randomizeArray(question.options) };
+  const questions = (await getQuestions(surveyId, page)).map((question) => {
+    if (question.randomize)
+      return { ...question, options: randomizeArray(question.options) };
 
-      return question;
-    }
-  );
+    return question;
+  });
 
   if (req.signedCookies && req.signedCookies.surveyResponses) {
     const surveyResponses: {
@@ -1057,18 +1056,21 @@ const getSurveyQuestionsAndResponsesHandler = async (
       return res.status(HttpStatusCode.OK).json({
         questions,
         questionResponses,
+        page,
       });
     }
 
     return res.status(HttpStatusCode.OK).json({
       questions,
       questionResponses: [],
+      page,
     });
   }
 
   return res.status(HttpStatusCode.OK).json({
     questions,
     questionResponses: [],
+    page,
   });
 };
 
