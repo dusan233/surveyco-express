@@ -61,14 +61,14 @@ export const getSurveyResponse = async (
 export const getSurveyResponses = async (
   surveyId: string,
   page: number,
-  sort: { name: string; type: "asc" | "desc" }
+  sort: { column: string; type: "asc" | "desc" }
 ) => {
   const take = 30;
   const skip = (page - 1) * take;
   const orderBy =
-    sort.name === "collector"
+    sort.column === "collector"
       ? { collector: { name: sort.type } }
-      : { [sort.name]: sort.type };
+      : { [sort.column]: sort.type };
   return await prisma.surveyResponse.findMany({
     where: { surveyId },
     orderBy: [orderBy, { display_number: "asc" }],

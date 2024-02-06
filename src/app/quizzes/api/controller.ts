@@ -1142,12 +1142,12 @@ const getSurveyResponsesHandler = async (
   const page = Number(req.query.page);
   const pageNum = isNaN(page) ? 1 : page;
 
-  const sort: { name: string; type: "asc" | "desc" } = req.query.sort
+  const sort: { column: string; type: "asc" | "desc" } = req.query.sort
     ? {
-        name: req.query.sort.split(":")[0],
+        column: req.query.sort.split(":")[0],
         type: req.query.sort.split(":")[1] as "asc" | "desc",
       }
-    : { name: "updated_at", type: "desc" };
+    : { column: "updated_at", type: "desc" };
 
   if (!survey)
     throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
