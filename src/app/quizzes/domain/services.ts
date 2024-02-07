@@ -723,6 +723,26 @@ export const getSurveyCollectorCount = async (surveyId: string) => {
   return await prisma.surveyCollector.count({ where: { surveyId } });
 };
 
+export const getSurveyResponseQuestionResponses2 = async (
+  surveyResponseId: string,
+  surveyId: string,
+  page: number
+) => {
+  const questions = await getQuestions(surveyId, page);
+  const questionIds = questions.map((q) => q.id);
+  return prisma.questionResponse.findMany({
+    include: {
+      answer: true,
+    },
+    where: {
+      surveyResponseId,
+      questionId: {
+        in: questionIds,
+      },
+    },
+  });
+};
+
 export const getSurveyResponseQuestionResponses = async (
   surveyResponseId: string,
   questionIds: string[]
