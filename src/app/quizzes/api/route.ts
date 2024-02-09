@@ -79,6 +79,11 @@ router.post(
   validate(getQuestionResultsSchema),
   asyncHandler(quizController.getQuestionsResultHandler)
 );
+router.get(
+  "/:surveyId/questions/result",
+  ClerkExpressRequireAuth(),
+  asyncHandler(quizController.getQuestionResultsHandler)
+);
 
 router.get(
   "/:surveyId/responses",

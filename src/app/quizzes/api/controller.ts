@@ -27,6 +27,7 @@ import {
   getSurveyQuestionCount,
   getSurveyStatus,
   getSurveyResponseQuestionResponses2,
+  getQuestionResults,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -1042,7 +1043,32 @@ const getSurveyQuestionsAndResponsesHandler = async (
     page,
   });
 };
+const getQuestionResultsHandler = async (
+  req: Request<SurveyParams, any, never, { page?: string }>,
+  res: Response
+) => {
+  const surveyId = req.params.surveyId;
+  const userId = req.auth.userId;
+  const page = Number(req.query.page);
+  const pageNum = isNaN(page) ? 1 : page;
 
+  const survey = await getSurvey(surveyId);
+  if (!survey)
+    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  if (survey.creatorId !== userId)
+    throw new AppError(
+      "",
+      "Unauthorized",
+      HttpStatusCode.UNAUTHORIZED,
+      "",
+      true
+    );
+
+  const questionsResults = await getQuestionResults(surveyId, pageNum);
+
+  return res.status(HttpStatusCode.OK).json(questionsResults);
+};
 const getQuestionsResultHandler = async (
   req: Request<SurveyParams, never, GetQuestionResultsRequestBody>,
   res: Response
@@ -1396,4 +1422,5 @@ export default {
   getSurveyResponseHandler,
   getSurveyResponseAnswersHandler,
   getSurveyResponsesVolumeHandler,
+  getQuestionResultsHandler,
 };

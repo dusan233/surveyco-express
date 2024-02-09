@@ -107,6 +107,90 @@ export const getSurveyCollectors = async (
   });
 };
 
+export const getQuestionResults = async (surveyId: string, page: number) => {
+  const questions = await getQuestions(surveyId, page);
+
+  const totalSurveyResponses = await prisma.surveyResponse.count({
+    where: { surveyId },
+  });
+
+  const questionResponses = await prisma.questionResponse.groupBy({
+    by: ["questionId"],
+    where: {
+      questionId: {
+        in: questions.map((q) => q.id),
+      },
+    },
+    _count: true,
+  });
+
+  const choiceResponses = await prisma.questionAnswer.groupBy({
+    by: ["questionOptionId"],
+    where: {
+      questionId: {
+        in: questions
+          .filter((q) => q.type !== QuestionType.textbox)
+          .map((q) => q.id),
+      },
+    },
+
+    _count: true,
+  });
+
+  const textboxResponses = (
+    await Promise.all(
+      questions
+        .filter((q) => q.type == QuestionType.textbox)
+        .map((q) =>
+          prisma.questionAnswer.findMany({
+            where: { questionId: q.id },
+            orderBy: {
+              created_at: "asc",
+            },
+            take: 20,
+          })
+        )
+    )
+  ).flat();
+
+  const questionsResults = questions.map((q) => {
+    const questionResponsesCount =
+      questionResponses.find((qRes) => qRes.questionId === q.id)?._count || 0;
+    if (q.type === QuestionType.textbox) {
+      return {
+        ...q,
+        answeredCount: questionResponsesCount,
+        skippedCount: totalSurveyResponses - questionResponsesCount,
+        answers: textboxResponses
+          .filter((answer) => answer.questionId === q.id)
+          .map((answer) => ({
+            id: answer.id,
+            questionResponseId: answer.questionResponseId,
+            text: answer.textAnswer,
+            updated_at: answer.updated_at,
+          })),
+      };
+    } else {
+      return {
+        ...q,
+        answeredCount: questionResponsesCount,
+        skippedCount: totalSurveyResponses - questionResponsesCount,
+        choices: q.options.map((qChoice) => {
+          const choiceResponsesCount =
+            choiceResponses.find((cRes) => cRes.questionOptionId === qChoice.id)
+              ?._count || 0;
+          return {
+            ...qChoice,
+            answeredCount: choiceResponsesCount,
+          };
+        }),
+      };
+    }
+  });
+
+  return questionsResults;
+};
+
 export const getQuestionsResult = async (
   surveyId: string,
   questionIds: string[]
