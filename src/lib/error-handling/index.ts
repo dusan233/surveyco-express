@@ -1,0 +1,90 @@
+import { HttpStatusCode } from "../../types/types";
+import * as Http from "http";
+import * as util from "util";
+
+let httpServerRef: Http.Server;
+
+const errorHandler = {
+  // Listen to the global process-level error events
+  listenToErrorEvents: (httpServer: Http.Server) => {
+    httpServerRef = httpServer;
+    process.on("uncaughtException", async (error) => {
+      await errorHandler.handleError(error);
+    });
+
+    process.on("unhandledRejection", async (reason) => {
+      await errorHandler.handleError(reason);
+    });
+
+    process.on("SIGTERM", async () => {
+      // use logger
+
+      await terminateHttpServerAndExit();
+    });
+
+    process.on("SIGINT", async () => {
+      // use logger
+
+      await terminateHttpServerAndExit();
+    });
+  },
+
+  handleError: (errorToHandle: unknown) => {
+    try {
+      const appError: AppError = normalizeError(errorToHandle);
+      //logger error here
+
+      if (!appError.isTrusted) {
+        terminateHttpServerAndExit();
+      }
+    } catch (handlingError: unknown) {
+      // Not using the logger here because it might have failed
+      process.stdout.write(
+        "The error handler failed, here are the handler failure and then the origin error that it tried to handle"
+      );
+      process.stdout.write(JSON.stringify(handlingError));
+      process.stdout.write(JSON.stringify(errorToHandle));
+    }
+  },
+};
+
+const terminateHttpServerAndExit = async () => {
+  // maybe implement more complex logic here (like using 'http-terminator' library)
+  if (httpServerRef) {
+    await httpServerRef.close();
+  }
+  process.exit();
+};
+
+const normalizeError = (errorToHandle: unknown): AppError => {
+  if (errorToHandle instanceof AppError) {
+    return errorToHandle;
+  }
+  if (errorToHandle instanceof Error) {
+    const appError = new AppError(errorToHandle.name, errorToHandle.message);
+    appError.stack = errorToHandle.stack;
+    return appError;
+  }
+  // meaning it could be any type,
+  const inputType = typeof errorToHandle;
+  return new AppError(
+    "general-error",
+    `Error Handler received a none error instance with type - ${inputType}, value - ${util.inspect(
+      errorToHandle
+    )}`
+  );
+};
+
+class AppError extends Error {
+  constructor(
+    public name: string,
+    public message: string,
+    public HTTPStatus: HttpStatusCode = 500,
+    public isTrusted = true,
+    public cause?: unknown
+  ) {
+    super(message);
+  }
+}
+
+export { errorHandler, AppError };
