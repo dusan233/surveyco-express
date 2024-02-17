@@ -11,5 +11,5 @@ export const updateSurveyCollectorStatusSchema = z.object({
 });
 
 export const updateSurveyCollectorSchema = z.object({
-  name: z.string(),
+  name: z.string().trim().min(1, "You must enter collector name."),
 });

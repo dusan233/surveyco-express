@@ -7,7 +7,7 @@ import {
 } from "../../../types/types";
 
 export const createQuizSchema = z.object({
-  title: z.string().min(1, "You must enter survey title."),
+  title: z.string().trim().min(1, "You must enter survey title."),
   category: z.nativeEnum(SurveyCategory).optional(),
 });
 
@@ -49,7 +49,7 @@ export const surveyResponseQuestionResponseSchema = z.object({
 
 export const questionSchema = z.object({
   type: z.nativeEnum(QuestionType),
-  description: z.string().min(1, "You must enter question description."),
+  description: z.string().trim().min(1, "You must enter question description."),
   descriptionImage: z.string().or(z.null()),
   required: z.boolean(),
   id: z.string().optional(),
@@ -60,7 +60,7 @@ export const multiChoiceQuestionSchema = questionSchema.extend({
     .array(
       z.object({
         id: z.string().optional(),
-        description: z.string().min(1, "You must enter option text."),
+        description: z.string().trim().min(1, "You must enter option text."),
         descriptionImage: z.string().or(z.null()),
       })
     )
@@ -102,7 +102,10 @@ export const saveQuestionSchema = z.object({
 export const updateQuestionSchema = z.object({
   data: z.object({
     type: z.nativeEnum(QuestionType),
-    description: z.string().min(1, "You must enter question description."),
+    description: z
+      .string()
+      .trim()
+      .min(1, "You must enter question description."),
     descriptionImage: z.string().or(z.null()),
     required: z.boolean(),
     randomize: z.boolean().optional(),
@@ -113,7 +116,10 @@ export const updateQuestionSchema = z.object({
 export const createQuestionSchema = z.object({
   data: z.object({
     type: z.nativeEnum(QuestionType),
-    description: z.string().min(1, "You must enter question description."),
+    description: z
+      .string()
+      .trim()
+      .min(1, "You must enter question description."),
     descriptionImage: z.string().or(z.null()),
     required: z.boolean(),
     randomize: z.boolean().optional(),
