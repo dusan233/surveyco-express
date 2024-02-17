@@ -11,9 +11,12 @@ import prisma from "./prismaClient";
 import { errorHandler } from "./lib/error-handling";
 import { Server } from "http";
 import "./dickinurmouth";
+import config from "./config";
 
 let connection: Server;
 async function startWebServer(): Promise<AddressInfo> {
+  config.validate();
+
   const app = express();
 
   app.set("trust proxy", true);
@@ -39,7 +42,7 @@ async function startWebServer(): Promise<AddressInfo> {
         const payload = JSON.stringify(req.body);
         const headers = req.headers as any;
 
-        const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET_KEY!);
+        const wh = new Webhook(config.get("clerkAuth.webhookSecretKey"));
 
         const evt = wh.verify(payload, headers) as WebhookEvent;
 
@@ -109,8 +112,8 @@ function defineErrorHandlingMiddleware(expressApp: express.Application) {
         }
       }
 
-      errorHandler.handleError(error);
-      res.status(error?.HTTPStatus || 500).json({ message: "Error occured" });
+      const appError = errorHandler.handleError(error);
+      errorHandler.handleErrorResponse(appError!, res);
     }
   );
 }

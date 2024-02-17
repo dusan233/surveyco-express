@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/convict": "^6.1.6",
     "@types/cookie-parser": "^1.4.6",
     "@types/cors": "^2.8.13",
     "@types/express": "^4.17.17",
@@ -31,6 +32,7 @@
     "body-parser": "^1.20.2",
     "connect-pg-simple": "^9.0.1",
     "connect-redis": "^7.1.0",
+    "convict": "^6.2.4",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "date-fns": "^3.2.0",

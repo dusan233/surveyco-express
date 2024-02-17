@@ -1,6 +1,7 @@
 import { HttpStatusCode } from "../../types/types";
 import * as Http from "http";
 import * as util from "util";
+import { Response } from "express";
 
 let httpServerRef: Http.Server;
 
@@ -9,11 +10,11 @@ const errorHandler = {
   listenToErrorEvents: (httpServer: Http.Server) => {
     httpServerRef = httpServer;
     process.on("uncaughtException", async (error) => {
-      await errorHandler.handleError(error);
+      errorHandler.handleError(error);
     });
 
     process.on("unhandledRejection", async (reason) => {
-      await errorHandler.handleError(reason);
+      errorHandler.handleError(reason);
     });
 
     process.on("SIGTERM", async () => {
@@ -37,6 +38,8 @@ const errorHandler = {
       if (!appError.isTrusted) {
         terminateHttpServerAndExit();
       }
+
+      return appError;
     } catch (handlingError: unknown) {
       // Not using the logger here because it might have failed
       process.stdout.write(
@@ -46,6 +49,16 @@ const errorHandler = {
       process.stdout.write(JSON.stringify(errorToHandle));
     }
   },
+  handleErrorResponse: (error: AppError, res: Response) => {
+    const errorObj = {
+      error: {
+        message: error.message,
+        code: error.name,
+      },
+    };
+
+    return res.status(error.HTTPStatus || 500).json(errorObj);
+  },
 };
 
 const terminateHttpServerAndExit = async () => {
@@ -53,7 +66,7 @@ const terminateHttpServerAndExit = async () => {
   if (httpServerRef) {
     await httpServerRef.close();
   }
-  process.exit();
+  process.exit(1);
 };
 
 const normalizeError = (errorToHandle: unknown): AppError => {

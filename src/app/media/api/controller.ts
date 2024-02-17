@@ -6,6 +6,7 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { promises as fs } from "fs";
 import { AppError } from "../../../lib/errors";
 import { v4 as uuid4 } from "uuid";
+import config from "../../../config";
 
 const uploadMediaHandler = async (
   req: Request<any, any, any, { surveyId?: string }>,
@@ -31,7 +32,7 @@ const uploadMediaHandler = async (
   const fileName = uuid4() + "." + file.originalFilename?.split(".")[1];
   await s3Client.send(
     new PutObjectCommand({
-      Bucket: process.env.AWS_BUCKETNAME,
+      Bucket: config.get("aws.bucketname"),
       Key: `survey/${surveyId}/` + fileName,
       Body: rawData,
       ContentType: file.mimetype ?? "binady/octet-stream",
