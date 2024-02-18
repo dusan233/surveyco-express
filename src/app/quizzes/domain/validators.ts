@@ -10,7 +10,8 @@ export const validateNewSurvey = (newSurvey: CreateSurveyData) => {
     throw new AppError(
       "BadRequest",
       "Invalid arguments for survey creation",
-      HttpStatusCode.BAD_REQUEST
+      HttpStatusCode.BAD_REQUEST,
+      true
     );
   }
 };

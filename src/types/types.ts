@@ -11,9 +11,20 @@ import {
   updateSurveyCollectorSchema,
   updateSurveyCollectorStatusSchema,
 } from "../app/collectors/api/schemaValidation";
+import { SurveyRecord } from "../app/quizzes/data-access/survey-repository";
 
 export type CreateSurveyData = z.infer<typeof createQuizSchema>;
 export type CreateSurveyDTO = CreateSurveyData & { userId: string };
+export type OrderByObject = { column: string; type: "asc" | "desc" };
+
+export type UserSurveysDTO = {
+  data: (SurveyRecord & {
+    question_count: number;
+    responses_count: number;
+    page_count: number;
+  })[];
+  total_pages: number;
+};
 
 export interface SurveyParams {
   surveyId: string;

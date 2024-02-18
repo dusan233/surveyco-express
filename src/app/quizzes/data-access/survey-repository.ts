@@ -1,7 +1,7 @@
 import prisma from "../../../prismaClient";
 import { CreateSurveyDTO } from "../../../types/types";
 
-type SurveyRecord = {
+export type SurveyRecord = {
   id: string;
   title: string;
   category: string | null;
