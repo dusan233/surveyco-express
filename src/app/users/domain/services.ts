@@ -1,5 +1,5 @@
 import { UserSurveysDTO } from "../../../types/types";
-import * as userRepository from "../data-access/user-repository";
+import * as surveyRepository from "../../quizzes/data-access/survey-repository";
 
 export const getUserSurveys = async (
   userId: string,
@@ -10,8 +10,8 @@ export const getUserSurveys = async (
   const skip = (page - 1) * take;
 
   const [userSurveys, userSurveyCount] = await Promise.all([
-    userRepository.getUserSurveys(take, skip, userId, sort),
-    userRepository.getUserSurveyCount(userId),
+    surveyRepository.getUserSurveys(take, skip, userId, sort),
+    surveyRepository.getUserSurveyCount(userId),
   ]);
 
   const data: UserSurveysDTO = {
@@ -33,5 +33,5 @@ export const getUserSurveys = async (
 };
 
 export const getUserSurveyCount = async (userId: string) => {
-  return userRepository.getUserSurveyCount(userId);
+  return surveyRepository.getUserSurveyCount(userId);
 };

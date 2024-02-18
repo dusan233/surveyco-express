@@ -17,6 +17,13 @@ export type CreateSurveyData = z.infer<typeof createQuizSchema>;
 export type CreateSurveyDTO = CreateSurveyData & { userId: string };
 export type OrderByObject = { column: string; type: "asc" | "desc" };
 
+export type SurveyDTO = SurveyRecord & {
+  responses_count: number;
+  page_count: number;
+  question_count: number;
+  survey_status: SurveyStatus;
+};
+
 export type UserSurveysDTO = {
   data: (SurveyRecord & {
     question_count: number;

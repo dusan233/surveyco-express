@@ -23,6 +23,12 @@ export const createSurvey = async (
   return await surveyRepository.createSurvey(newSurveyData);
 };
 
+export const getSurveyById = (surveyId: string) => {
+  const survey = surveyRepository.getSurveyById(surveyId);
+
+  return survey;
+};
+
 export const getSurvey = async (
   surveyId: string,
   includeQuestions: boolean = false
@@ -791,7 +797,7 @@ export const updateQuestionsNumber = async (
 };
 
 export const getSurveyResponseCount = async (surveyId: string) => {
-  return await prisma.surveyResponse.count({ where: { surveyId } });
+  return await surveyRepository.getSurveyResponseCount(surveyId);
 };
 
 export const getSurveyCollectorCount = async (surveyId: string) => {
@@ -1228,19 +1234,12 @@ export const saveQuestion = async (
 };
 
 export const getSurveyPagesCount = async (surveyId: string) => {
-  return await prisma.surveyPage.count({
-    where: { surveyId },
-  });
+  return await surveyRepository.getSurveyPageCount(surveyId);
 };
 
 export const getSurveyStatus = async (surveyId: string) => {
-  const collectorsDistinctStatuses = (
-    await prisma.surveyCollector.findMany({
-      where: { deleted: false, surveyId },
-      distinct: ["status"],
-      select: { status: true },
-    })
-  ).map((collector) => collector.status);
+  const collectorsDistinctStatuses =
+    await surveyRepository.getSurveyCollectorStatuses(surveyId);
 
   if (collectorsDistinctStatuses.length === 0) {
     return SurveyStatus.draft;
@@ -1254,7 +1253,7 @@ export const getSurveyStatus = async (surveyId: string) => {
 };
 
 export const getSurveyQuestionCount = async (surveyId: string) => {
-  return await prisma.question.count({ where: { quizId: surveyId } });
+  return await surveyRepository.getSurveyQuestionCount(surveyId);
 };
 
 export const getSurveyPageQuestionsCount = async (

@@ -40,6 +40,7 @@ import {
   Question,
   QuestionType,
   SaveSurveyResponseRequestBody,
+  SurveyDTO,
   SurveyPageParams,
   SurveyParams,
   SurveyQuestionParams,
@@ -47,6 +48,7 @@ import {
 } from "../../../types/types";
 import prisma from "../../../prismaClient";
 import { AppError } from "../../../lib/errors";
+import { AppError as AppErr } from "../../../lib/error-handling/index";
 import { getSurveyCollector } from "../../collectors/domain/services";
 import {
   add,
@@ -70,24 +72,24 @@ const createSurveyHandler = async (req: Request, res: Response) => {
   return res.status(HttpStatusCode.CREATED).json(newSurvey);
 };
 
-const getSurveyHandler = async (
-  req: Request<SurveyParams>,
-  res: Response,
-  next: NextFunction
-) => {
+const getSurveyHandler = async (req: Request<SurveyParams>, res: Response) => {
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
-  const survey = await getSurvey(surveyId, true);
+  const survey = await surveyService.getSurveyById(surveyId);
 
   if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+    throw new AppErr(
+      "NotFound",
+      "Resource not found.",
+      HttpStatusCode.NOT_FOUND,
+      true
+    );
 
   if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
+    throw new AppErr(
       "Unauthorized",
+      "Unauthorized access.",
       HttpStatusCode.UNAUTHORIZED,
-      "",
       true
     );
 
@@ -99,13 +101,15 @@ const getSurveyHandler = async (
       getSurveyStatus(surveyId),
     ]);
 
-  return res.status(HttpStatusCode.OK).json({
+  const surveyData: SurveyDTO = {
     ...survey,
     responses_count: surveyResponseCount,
     page_count: surveyPageCount,
     question_count: questionCount,
     survey_status: surveyStatus,
-  });
+  };
+
+  return res.status(HttpStatusCode.OK).json(surveyData);
 };
 
 const getSurveyResponsesVolumeHandler = async (
