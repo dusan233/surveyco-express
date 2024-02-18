@@ -12,7 +12,8 @@ import {
   updateSurveyCollectorStatusSchema,
 } from "../app/collectors/api/schemaValidation";
 
-export type CreateQuizData = z.infer<typeof createQuizSchema>;
+export type CreateSurveyData = z.infer<typeof createQuizSchema>;
+export type CreateSurveyDTO = CreateSurveyData & { userId: string };
 
 export interface SurveyParams {
   surveyId: string;

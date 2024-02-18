@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from "express";
 import {
-  createSurvey,
   createSurveyPage,
   deleteQuestion,
   getQuestion,
@@ -32,7 +31,6 @@ import {
 import {
   CollectorParams,
   CollectorType,
-  CreateQuizData,
   GetQuestionResultsRequestBody,
   HttpStatusCode,
   MultiChoiceQuestion,
@@ -62,13 +60,14 @@ import {
   subDays,
 } from "date-fns";
 import { randomizeArray } from "../../../lib/utils";
+import * as surveyService from "../domain/services";
 
-const createQuizHandler = async (
-  req: Request<any, any, CreateQuizData>,
-  res: Response
-) => {
-  const createdQuiz = await createSurvey(req.auth.userId, req.body);
-  return res.status(201).json(createdQuiz);
+const createSurveyHandler = async (req: Request, res: Response) => {
+  const userId = req.auth.userId;
+
+  const newSurvey = await surveyService.createSurvey(req.body, userId);
+
+  return res.status(HttpStatusCode.CREATED).json(newSurvey);
 };
 
 const getSurveyHandler = async (
@@ -1399,7 +1398,7 @@ const moveSurveyPageHandler = async (
 };
 
 export default {
-  createQuizHandler,
+  createSurveyHandler,
   getSurveyQuestionsHandler,
   saveQuestionHandler,
   getSurveyHandler,

@@ -12,6 +12,7 @@ import { errorHandler } from "./lib/error-handling";
 import { Server } from "http";
 import "./dickinurmouth";
 import config from "./config";
+import helmet from "helmet";
 
 let connection: Server;
 async function startWebServer(): Promise<AddressInfo> {
@@ -29,6 +30,7 @@ async function startWebServer(): Promise<AddressInfo> {
       optionsSuccessStatus: 200,
     })
   );
+  app.use(helmet());
   app.use(express.json());
   app.use(express.static(path.join(__dirname, "public")));
 

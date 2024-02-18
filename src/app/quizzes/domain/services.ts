@@ -1,8 +1,6 @@
-import { Prisma, Question } from "@prisma/client";
 import prisma from "../../../prismaClient";
 import {
-  CollectorType,
-  CreateQuizData,
+  CreateSurveyData,
   HttpStatusCode,
   MultiChoiceQuestion,
   OperationPosition,
@@ -12,24 +10,17 @@ import {
   SurveyStatus,
 } from "../../../types/types";
 import { AppError } from "../../../lib/errors";
+import { validateNewSurvey } from "./validators";
+import * as surveyRepository from "../data-access/survey-repository";
 
-export const createSurvey = async (userId: string, data: CreateQuizData) => {
-  const newQuiz = await prisma.quiz.create({
-    data: {
-      title: data.title,
-      category: data.category,
-      creator: {
-        connect: { id: userId },
-      },
-      surveyPages: {
-        create: {
-          number: 1,
-        },
-      },
-    },
-  });
+export const createSurvey = async (
+  surveyData: CreateSurveyData,
+  creatorId: string
+) => {
+  const validatedData = validateNewSurvey(surveyData);
+  const newSurveyData = { ...validatedData, userId: creatorId };
 
-  return newQuiz;
+  return await surveyRepository.createSurvey(newSurveyData);
 };
 
 export const getSurvey = async (
