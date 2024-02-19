@@ -11,6 +11,16 @@ export const getCollectorCountBySurveyId = async (surveyId: string) => {
   return await prisma.surveyCollector.count({ where: { surveyId } });
 };
 
+export const getCollectorById = async (
+  collectorId: string
+): Promise<CollectrorRecord | null> => {
+  const collector = await prisma.surveyCollector.findUnique({
+    where: { id: collectorId },
+  });
+
+  return collector;
+};
+
 export const createCollector = async (
   data: CreateCollectorData
 ): Promise<CollectrorRecord> => {

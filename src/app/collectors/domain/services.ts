@@ -70,9 +70,6 @@ export const updateSurveyCollectorStatus = async (
 };
 
 export const getSurveyCollector = async (collectorId: string) => {
-  const collector = await prisma.surveyCollector.findUnique({
-    where: { id: collectorId },
-  });
-
+  const collector = await collectorRepository.getCollectorById(collectorId);
   return collector;
 };

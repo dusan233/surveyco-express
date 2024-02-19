@@ -10,6 +10,7 @@ import {
   UpdateCollectorStatusRequestBody,
 } from "../../../types/types";
 import { AppError } from "../../../lib/errors";
+import { AppError as AppErr } from "../../../lib/error-handling/index";
 import {
   createSurveyCollector,
   deleteSurveyCollector,
@@ -142,11 +143,17 @@ const getSurveyCollectorHandler = async (
   req: Request<CollectorParams>,
   res: Response
 ) => {
-  console.log("ovde sam");
-
   const collectorId = req.params.collectorId;
 
-  const collector = await getSurveyCollector(collectorId);
+  const collector = await collectorService.getSurveyCollector(collectorId);
+
+  if (!collector)
+    throw new AppErr(
+      "NotFound",
+      "Resource not found.",
+      HttpStatusCode.NOT_FOUND,
+      true
+    );
 
   return res.status(HttpStatusCode.OK).json(collector);
 };
