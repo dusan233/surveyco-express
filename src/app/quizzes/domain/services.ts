@@ -12,6 +12,8 @@ import {
 import { AppError } from "../../../lib/errors";
 import { validateNewSurvey } from "./validators";
 import * as surveyRepository from "../data-access/survey-repository";
+import * as surveyResponseRepository from "../data-access/survey-response-repository";
+import { add, format, startOfDay } from "date-fns";
 
 export const createSurvey = async (
   surveyData: CreateSurveyData,
@@ -802,6 +804,56 @@ export const getSurveyResponseCount = async (surveyId: string) => {
 
 export const getSurveyCollectorCount = async (surveyId: string) => {
   return await prisma.surveyCollector.count({ where: { surveyId } });
+};
+
+export const getSurveyResponseVolume = async (surveyId: string) => {
+  const currentDate = new Date();
+  const tenDaysAgo = new Date(currentDate);
+  tenDaysAgo.setDate(currentDate.getDate() - 10);
+
+  const surveyResponseCountPerDay =
+    await surveyResponseRepository.getSurveyResponseCountRangeDate(
+      surveyId,
+      tenDaysAgo.toISOString(),
+      currentDate.toISOString()
+    );
+
+  const dateObjects = [];
+  const startDate = new Date(tenDaysAgo);
+  const endDate = new Date(currentDate);
+
+  while (startDate <= endDate) {
+    const day = format(startDate, "yyyy-MM-dd");
+    const startDayDate = new Date(day);
+    const endDayDate = startOfDay(add(startDayDate, { days: 1 }));
+
+    // Set hours, minutes, and seconds to get the end of the day
+    endDayDate.setUTCHours(23);
+    endDayDate.setUTCMinutes(59);
+    endDayDate.setUTCSeconds(59);
+    endDayDate.setUTCMilliseconds(999);
+
+    // Subtract 1 millisecond to get the end of the previous day
+
+    let responseCount = 0;
+    surveyResponseCountPerDay.forEach((resCount) => {
+      if (
+        resCount.created_at >= startDayDate &&
+        resCount.created_at <= endDayDate
+      ) {
+        responseCount += resCount._count._all;
+      }
+    });
+    dateObjects.push({
+      day: format(startDate, "yyyy-MM-dd"),
+      response_count: responseCount,
+    });
+
+    // Move to the next day
+    startDate.setDate(startDate.getDate() + 1);
+  }
+
+  return dateObjects;
 };
 
 export const getSurveyResponseQuestionResponses2 = async (

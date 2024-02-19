@@ -119,64 +119,29 @@ const getSurveyResponsesVolumeHandler = async (
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
 
-  const survey = await getSurvey(surveyId);
-  if (!survey || survey.creatorId !== userId)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+  const survey = await surveyService.getSurveyById(surveyId);
 
-  const currentDate = new Date();
-  const sevenDaysAgo = new Date(currentDate);
-  sevenDaysAgo.setDate(currentDate.getDate() - 10);
+  if (!survey)
+    throw new AppErr(
+      "NotFound",
+      "Resource not found.",
+      HttpStatusCode.NOT_FOUND,
+      true
+    );
 
-  const surveyResponseCounts = await prisma.surveyResponse.groupBy({
-    by: ["created_at"],
-    _count: {
-      _all: true,
-    },
-    where: {
-      surveyId,
-      created_at: {
-        gte: sevenDaysAgo.toISOString(),
-        lte: currentDate.toISOString(),
-      },
-    },
-  });
+  if (survey.creatorId !== userId)
+    throw new AppErr(
+      "Unauthorized",
+      "Unauthorized access.",
+      HttpStatusCode.UNAUTHORIZED,
+      true
+    );
 
-  const dateObjects = [];
-  const startDate = new Date(sevenDaysAgo);
-  const endDate = new Date(currentDate);
+  const surveyResponseVolume = await surveyService.getSurveyResponseVolume(
+    surveyId
+  );
 
-  while (startDate <= endDate) {
-    const day = format(startDate, "yyyy-MM-dd");
-    const startDayDate = new Date(day);
-    const endDayDate = startOfDay(add(startDayDate, { days: 1 }));
-
-    // Set hours, minutes, and seconds to get the end of the day
-    endDayDate.setUTCHours(23);
-    endDayDate.setUTCMinutes(59);
-    endDayDate.setUTCSeconds(59);
-    endDayDate.setUTCMilliseconds(999);
-
-    // Subtract 1 millisecond to get the end of the previous day
-
-    let responseCount = 0;
-    surveyResponseCounts.forEach((resCount) => {
-      if (
-        resCount.created_at >= startDayDate &&
-        resCount.created_at <= endDayDate
-      ) {
-        responseCount += resCount._count._all;
-      }
-    });
-    dateObjects.push({
-      day: format(startDate, "yyyy-MM-dd"),
-      response_count: responseCount,
-    });
-
-    // Move to the next day
-    startDate.setDate(startDate.getDate() + 1);
-  }
-
-  return res.status(HttpStatusCode.OK).json(dateObjects);
+  return res.status(HttpStatusCode.OK).json(surveyResponseVolume);
 };
 
 const getSurveyPagesHandler = async (
