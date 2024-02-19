@@ -131,3 +131,24 @@ export const saveMultiChoiceQuestionSchema = z.object({
   data: multiChoiceQuestionSchema,
   pageId: z.string().optional(),
 });
+
+export const surveyCollectorsQueryParamsSchema = z.object({
+  page: z
+    .string()
+    .regex(/^\d+$/)
+    .optional()
+    .transform((value) => (value ? parseInt(value) : 1)),
+  take: z
+    .string()
+    .regex(/^\d+$/)
+    .optional()
+    .transform((value) => (value ? parseInt(value) : 10)),
+  sort: z
+    .string()
+    .regex(/^(name|updated_at|status|total_responses):(asc|desc)$/)
+    .optional()
+    .transform((value) => {
+      const [columnName, type] = value ? value.split(":") : ["name", "asc"];
+      return { column: columnName, type: type as "asc" | "desc" };
+    }),
+});

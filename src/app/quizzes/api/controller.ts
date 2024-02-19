@@ -63,6 +63,11 @@ import {
 } from "date-fns";
 import { randomizeArray } from "../../../lib/utils";
 import * as surveyService from "../domain/services";
+import {
+  assertSurveyExists,
+  assertUserCreatedSurvey,
+  validateSurveyCollectorsQueryParams,
+} from "../domain/validators";
 
 const createSurveyHandler = async (req: Request, res: Response) => {
   const userId = req.auth.userId;
@@ -77,32 +82,19 @@ const getSurveyHandler = async (req: Request<SurveyParams>, res: Response) => {
   const userId = req.auth.userId;
   const survey = await surveyService.getSurveyById(surveyId);
 
-  if (!survey)
-    throw new AppErr(
-      "NotFound",
-      "Resource not found.",
-      HttpStatusCode.NOT_FOUND,
-      true
-    );
-
-  if (survey.creatorId !== userId)
-    throw new AppErr(
-      "Unauthorized",
-      "Unauthorized access.",
-      HttpStatusCode.UNAUTHORIZED,
-      true
-    );
+  assertSurveyExists(survey);
+  assertUserCreatedSurvey(survey!, userId);
 
   const [surveyPageCount, surveyResponseCount, questionCount, surveyStatus] =
     await Promise.all([
-      getSurveyPagesCount(surveyId),
-      getSurveyResponseCount(surveyId),
-      getSurveyQuestionCount(surveyId),
-      getSurveyStatus(surveyId),
+      surveyService.getSurveyPagesCount(surveyId),
+      surveyService.getSurveyResponseCount(surveyId),
+      surveyService.getSurveyQuestionCount(surveyId),
+      surveyService.getSurveyStatus(surveyId),
     ]);
 
   const surveyData: SurveyDTO = {
-    ...survey,
+    ...survey!,
     responses_count: surveyResponseCount,
     page_count: surveyPageCount,
     question_count: questionCount,
@@ -121,21 +113,8 @@ const getSurveyResponsesVolumeHandler = async (
 
   const survey = await surveyService.getSurveyById(surveyId);
 
-  if (!survey)
-    throw new AppErr(
-      "NotFound",
-      "Resource not found.",
-      HttpStatusCode.NOT_FOUND,
-      true
-    );
-
-  if (survey.creatorId !== userId)
-    throw new AppErr(
-      "Unauthorized",
-      "Unauthorized access.",
-      HttpStatusCode.UNAUTHORIZED,
-      true
-    );
+  assertSurveyExists(survey);
+  assertUserCreatedSurvey(survey!, userId);
 
   const surveyResponseVolume = await surveyService.getSurveyResponseVolume(
     surveyId
@@ -1198,52 +1177,20 @@ const getSurveyCollectorsHandler = async (
 ) => {
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
-  const page = Number(req.query.page);
-  const pageNum = isNaN(page) ? 1 : page;
-  const survey = await getSurvey(surveyId);
-  const take = Number(req.query.take);
-  const takeNum = isNaN(take) ? 15 : take;
+  const survey = await surveyService.getSurveyById(surveyId);
 
-  const sort: { column: string; type: "asc" | "desc" } = req.query.sort
-    ? {
-        column: req.query.sort.split(":")[0],
-        type: req.query.sort.split(":")[1] as "asc" | "desc",
-      }
-    : { column: "updated_at", type: "desc" };
+  const validatedQueryParams = validateSurveyCollectorsQueryParams(req.query);
 
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+  assertSurveyExists(survey);
+  assertUserCreatedSurvey(survey!, userId);
 
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  const [collectors, collectorCount] = await Promise.all([
-    getSurveyCollectors(surveyId, pageNum, sort, takeNum),
-    getSurveyCollectorCount(surveyId),
-  ]);
-
-  const formatedCollectors = collectors.map((collector) => ({
-    id: collector.id,
-    name: collector.name,
-    created_at: collector.created_at,
-    updated_at: collector.updated_at,
-    status: collector.status,
-    type: collector.type,
-    surveyId: collector.surveyId,
-    total_responses: collector._count.responses,
-  }));
-
-  return res.status(HttpStatusCode.OK).json({
-    data: formatedCollectors,
-    total_pages: Math.ceil(collectorCount / takeNum),
-    collector_count: collectorCount,
+  const surveyCollectors = await surveyService.getSurveyCollectors(surveyId, {
+    take: validatedQueryParams.take,
+    page: validatedQueryParams.page,
+    sort: validatedQueryParams.sort,
   });
+
+  return res.status(HttpStatusCode.OK).json(surveyCollectors);
 };
 
 const getSurveyQuestionsHandler = async (

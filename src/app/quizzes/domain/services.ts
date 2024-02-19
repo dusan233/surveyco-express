@@ -4,15 +4,18 @@ import {
   HttpStatusCode,
   MultiChoiceQuestion,
   OperationPosition,
+  OrderByObject,
   QuestionType,
   Question as Questione,
   SaveSurveyResponseRequestBody,
+  SurveyCollectorsDTO,
   SurveyStatus,
 } from "../../../types/types";
 import { AppError } from "../../../lib/errors";
 import { validateNewSurvey } from "./validators";
 import * as surveyRepository from "../data-access/survey-repository";
 import * as surveyResponseRepository from "../data-access/survey-response-repository";
+import * as collectorRepository from "../../collectors/data-access/collectors.repository";
 import { add, format, startOfDay } from "date-fns";
 
 export const createSurvey = async (
@@ -81,29 +84,41 @@ export const getSurveyResponses = async (
 
 export const getSurveyCollectors = async (
   surveyId: string,
-  page: number,
-  sort: { column: string; type: "asc" | "desc" },
-  take: number
+  params: {
+    page: number;
+    take: number;
+    sort: OrderByObject;
+  }
 ) => {
-  const skip = (page - 1) * take;
-  const orderBy =
-    sort.column === "total_responses"
-      ? { responses: { _count: sort.type } }
-      : { [sort.column]: sort.type };
+  const skip = (params.page - 1) * params.take;
 
-  return await prisma.surveyCollector.findMany({
-    where: { surveyId, deleted: { not: true } },
-    skip,
-    take,
-    orderBy: [orderBy, { created_at: "asc" }],
-    include: {
-      _count: {
-        select: {
-          responses: true,
-        },
-      },
-    },
-  });
+  const [collectors, collectorCount] = await Promise.all([
+    collectorRepository.getCollectorsBySurveyId(surveyId, {
+      take: params.take,
+      skip,
+      sort: params.sort,
+    }),
+    collectorRepository.getCollectorCountBySurveyId(surveyId),
+  ]);
+
+  const formatedCollectors = collectors.map((collector) => ({
+    id: collector.id,
+    name: collector.name,
+    created_at: collector.created_at,
+    updated_at: collector.updated_at,
+    status: collector.status,
+    type: collector.type,
+    surveyId: collector.surveyId,
+    total_responses: collector._count.responses,
+  }));
+
+  const surveyCollectorsData: SurveyCollectorsDTO = {
+    data: formatedCollectors,
+    total_pages: Math.ceil(collectorCount / params.take),
+    collector_count: collectorCount,
+  };
+
+  return surveyCollectorsData;
 };
 
 export const getQuestionResults = async (surveyId: string, page: number) => {
@@ -803,7 +818,7 @@ export const getSurveyResponseCount = async (surveyId: string) => {
 };
 
 export const getSurveyCollectorCount = async (surveyId: string) => {
-  return await prisma.surveyCollector.count({ where: { surveyId } });
+  return collectorRepository.getCollectorCountBySurveyId(surveyId);
 };
 
 export const getSurveyResponseVolume = async (surveyId: string) => {
