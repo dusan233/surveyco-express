@@ -1,27 +1,13 @@
-import { NextFunction, Request, Response } from "express";
-import { getSurvey } from "../../quizzes/domain/services";
+import { Request, Response } from "express";
 import {
   CollectorParams,
-  CollectorType,
   CreateCollectorData,
   HttpStatusCode,
-  SurveyParams,
   UpdateCollectorRequestBody,
   UpdateCollectorStatusRequestBody,
 } from "../../../types/types";
-import { AppError } from "../../../lib/errors";
 import { AppError as AppErr } from "../../../lib/error-handling/index";
-import {
-  createSurveyCollector,
-  deleteSurveyCollector,
-  getSurveyCollector,
-  updateSurveyCollector,
-  updateSurveyCollectorStatus,
-} from "../domain/services";
-import {
-  assertSurveyExists,
-  assertUserCreatedSurvey,
-} from "../../quizzes/domain/validators";
+import { updateSurveyCollectorStatus } from "../domain/services";
 import * as collectorService from "../domain/services";
 
 const createSurveyCollectorHandler = async (
@@ -44,30 +30,11 @@ const updateSurveyCollectorStatusHandler = async (
 ) => {
   const userId = req.auth.userId;
   const collectorId = req.params.collectorId;
-  const status = req.body.status;
-
-  const collector = await getSurveyCollector(collectorId);
-
-  if (!collector)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  const survey = await getSurvey(collector.surveyId);
-
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
 
   const updatedCollector = await updateSurveyCollectorStatus(
+    req.body,
     collectorId,
-    status
+    userId
   );
 
   return res.status(HttpStatusCode.OK).json(updatedCollector);
@@ -80,26 +47,7 @@ const deleteSurveyCollectorHandler = async (
   const userId = req.auth.userId;
   const collectorId = req.params.collectorId;
 
-  const collector = await getSurveyCollector(collectorId);
-
-  if (!collector)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  const survey = await getSurvey(collector.surveyId);
-
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  await deleteSurveyCollector(collectorId);
+  await collectorService.deleteSurveyCollector(collectorId, userId);
 
   return res.sendStatus(HttpStatusCode.NO_CONTENT);
 };
@@ -110,30 +58,11 @@ const updateSurveyCollectorHandler = async (
 ) => {
   const userId = req.auth.userId;
   const collectorId = req.params.collectorId;
-  const updatedCollectorName = req.body.name;
 
-  const collector = await getSurveyCollector(collectorId);
-
-  if (!collector)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  const survey = await getSurvey(collector.surveyId);
-
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  const updatedCollector = await updateSurveyCollector(
-    updatedCollectorName,
-    collectorId
+  const updatedCollector = await collectorService.updateSurveyCollector(
+    req.body,
+    collectorId,
+    userId
   );
 
   return res.status(HttpStatusCode.OK).json(updatedCollector);

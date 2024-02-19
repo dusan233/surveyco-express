@@ -24,7 +24,6 @@ router.put(
 router.put(
   "/:collectorId",
   ClerkExpressRequireAuth(),
-  validate(updateSurveyCollectorSchema),
   asyncHandler(collectorController.updateSurveyCollectorHandler)
 );
 router.delete(

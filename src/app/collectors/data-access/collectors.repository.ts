@@ -11,6 +11,33 @@ export const getCollectorCountBySurveyId = async (surveyId: string) => {
   return await prisma.surveyCollector.count({ where: { surveyId } });
 };
 
+export const updateCollector = async (
+  collectorData: { name?: string; status?: string },
+  collectorId: string
+) => {
+  return await prisma.surveyCollector.update({
+    where: { id: collectorId },
+    data: collectorData,
+  });
+};
+
+export const deleteCollector = async (collectorId: string) => {
+  return prisma.$transaction(async (tx) => {
+    // this when u add deleted props to others
+    // await tx.surveyResponse.updateMany({where: {collectorId}, data: {
+    //   deleted: true
+    // }})
+
+    return await tx.surveyCollector.update({
+      where: { id: collectorId },
+      data: {
+        deleted: true,
+        status: "close",
+      },
+    });
+  });
+};
+
 export const getCollectorById = async (
   collectorId: string
 ): Promise<CollectrorRecord | null> => {
