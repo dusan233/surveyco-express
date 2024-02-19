@@ -13,7 +13,6 @@ const router = express.Router();
 router.post(
   "/",
   ClerkExpressRequireAuth(),
-  validate(createSurveyCollectorSchema),
   asyncHandler(collectorController.createSurveyCollectorHandler)
 );
 router.put(

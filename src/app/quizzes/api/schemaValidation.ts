@@ -13,6 +13,7 @@ export const createQuizSchema = z.object({
 
 export const createSurveyCollectorSchema = z.object({
   type: z.nativeEnum(CollectorType),
+  surveyId: z.string(),
 });
 
 export const getQuestionResultsSchema = z.object({

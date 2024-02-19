@@ -1,31 +1,31 @@
 import prisma from "../../../prismaClient";
-import { CollectorType } from "../../../types/types";
+import { CreateCollectorData } from "../../../types/types";
+import * as surveyService from "../../quizzes/domain/services";
+import * as collectorRepository from "../data-access/collectors.repository";
+import {
+  assertSurveyExists,
+  assertUserCreatedSurvey,
+} from "../../quizzes/domain/validators";
+import { validateCreateCollector } from "./validators";
 
 export const createSurveyCollector = async (
-  collectorType: CollectorType,
-  surveyId: string
+  collectorData: CreateCollectorData,
+  userId: string
 ) => {
-  const collector = await prisma.$transaction(async (tx) => {
-    const collectorName =
-      collectorType === CollectorType.web_link
-        ? "Web Link " +
-          ((await tx.surveyCollector.count({
-            where: { surveyId, type: CollectorType.web_link },
-          })) +
-            1)
-        : "New Collector";
+  const validatedCollectorData = validateCreateCollector(collectorData);
 
-    return await prisma.surveyCollector.create({
-      data: {
-        name: collectorName,
-        type: collectorType,
-        status: "open",
-        survey: { connect: { id: surveyId } },
-      },
-    });
-  });
+  const survey = await surveyService.getSurveyById(
+    validatedCollectorData.surveyId
+  );
 
-  return collector;
+  assertSurveyExists(survey);
+  assertUserCreatedSurvey(survey!, userId);
+
+  const newCollector = await collectorRepository.createCollector(
+    validatedCollectorData
+  );
+
+  return newCollector;
 };
 
 export const deleteSurveyCollector = async (collectorId: string) => {

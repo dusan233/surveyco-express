@@ -3,6 +3,7 @@ import { getSurvey } from "../../quizzes/domain/services";
 import {
   CollectorParams,
   CollectorType,
+  CreateCollectorData,
   HttpStatusCode,
   SurveyParams,
   UpdateCollectorRequestBody,
@@ -16,30 +17,22 @@ import {
   updateSurveyCollector,
   updateSurveyCollectorStatus,
 } from "../domain/services";
+import {
+  assertSurveyExists,
+  assertUserCreatedSurvey,
+} from "../../quizzes/domain/validators";
+import * as collectorService from "../domain/services";
 
 const createSurveyCollectorHandler = async (
-  req: Request<never, never, { type: CollectorType; surveyId: string }>,
-  res: Response,
-  next: NextFunction
+  req: Request<never, never, CreateCollectorData>,
+  res: Response
 ) => {
-  const surveyId = req.body.surveyId;
-  const collectorType = req.body.type;
   const userId = req.auth.userId;
-  const survey = await getSurvey(surveyId);
 
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  const collector = await createSurveyCollector(collectorType, surveyId);
+  const collector = await collectorService.createSurveyCollector(
+    req.body,
+    userId
+  );
 
   return res.status(HttpStatusCode.CREATED).json(collector);
 };

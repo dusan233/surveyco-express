@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   createQuizSchema,
+  createSurveyCollectorSchema,
   getQuestionResultsSchema,
   placePageSchema,
   placeQuestionSchema,
@@ -15,6 +16,7 @@ import { SurveyRecord } from "../app/quizzes/data-access/survey-repository";
 
 export type CreateSurveyData = z.infer<typeof createQuizSchema>;
 export type CreateSurveyDTO = CreateSurveyData & { userId: string };
+export type CreateCollectorData = z.infer<typeof createSurveyCollectorSchema>;
 export type OrderByObject = { column: string; type: "asc" | "desc" };
 
 export type CollectrorRecord = {
