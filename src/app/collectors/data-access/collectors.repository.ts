@@ -14,7 +14,7 @@ export const getCollectorCountBySurveyId = async (surveyId: string) => {
 export const updateCollector = async (
   collectorData: { name?: string; status?: string },
   collectorId: string
-) => {
+): Promise<CollectrorRecord> => {
   return await prisma.surveyCollector.update({
     where: { id: collectorId },
     data: collectorData,

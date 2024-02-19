@@ -1,11 +1,6 @@
 import { ClerkExpressRequireAuth } from "@clerk/clerk-sdk-node";
 import express from "express";
-import { asyncHandler, validate } from "../../../lib/middlewares";
-import {
-  createSurveyCollectorSchema,
-  updateSurveyCollectorSchema,
-  updateSurveyCollectorStatusSchema,
-} from "./schemaValidation";
+import { asyncHandler } from "../../../lib/middlewares";
 import collectorController from "./controller";
 
 const router = express.Router();
@@ -18,7 +13,6 @@ router.post(
 router.put(
   "/:collectorId/status",
   ClerkExpressRequireAuth(),
-  validate(updateSurveyCollectorStatusSchema),
   asyncHandler(collectorController.updateSurveyCollectorStatusHandler)
 );
 router.put(

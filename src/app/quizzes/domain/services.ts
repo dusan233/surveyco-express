@@ -16,6 +16,7 @@ import { validateNewSurvey } from "./validators";
 import * as surveyRepository from "../data-access/survey-repository";
 import * as surveyResponseRepository from "../data-access/survey-response-repository";
 import * as collectorRepository from "../../collectors/data-access/collectors.repository";
+import * as surveyPageRepository from "../data-access/survey-page-repository";
 import { add, format, startOfDay } from "date-fns";
 
 export const createSurvey = async (
@@ -1067,17 +1068,7 @@ export const saveSurveyResponse = async (
 };
 
 export const getSurveyPages = async (surveyId: string) => {
-  const pages = await prisma.surveyPage.findMany({
-    where: { survey: { id: surveyId } },
-    orderBy: { number: "asc" },
-    include: {
-      _count: {
-        select: {
-          questions: true,
-        },
-      },
-    },
-  });
+  const pages = await surveyPageRepository.getSurveyPages(surveyId);
 
   return pages;
 };

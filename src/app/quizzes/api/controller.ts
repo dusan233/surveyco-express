@@ -129,21 +129,12 @@ const getSurveyPagesHandler = async (
 ) => {
   const surveyId = req.params.surveyId;
 
-  const survey = await getSurvey(surveyId);
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+  const survey = await surveyService.getSurveyById(surveyId);
+  assertSurveyExists(survey);
 
-  const surveyPages = await getSurveyPages(surveyId);
-  const formatedSurveyPages = surveyPages.map((page) => ({
-    id: page.id,
-    created_at: page.created_at,
-    updated_at: page.updated_at,
-    surveyId: page.surveyId,
-    number: page.number,
-    totalQuestions: page._count.questions,
-  }));
+  const surveyPages = await surveyService.getSurveyPages(surveyId);
 
-  return res.status(HttpStatusCode.OK).json(formatedSurveyPages);
+  return res.status(HttpStatusCode.OK).json(surveyPages);
 };
 
 const moveQuestionHandler = async (
