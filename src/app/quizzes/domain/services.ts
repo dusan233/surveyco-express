@@ -18,6 +18,9 @@ import * as surveyRepository from "../data-access/survey-repository";
 import * as surveyResponseRepository from "../data-access/survey-response-repository";
 import * as collectorRepository from "../../collectors/data-access/collectors.repository";
 import * as surveyPageRepository from "../data-access/survey-page-repository";
+import * as questionResponseRepository from "../data-access/question-response-repository";
+import * as questionAnswerRepository from "../data-access/question-answer-repository";
+import * as questionRepository from "../data-access/question-repository";
 import { add, format, startOfDay } from "date-fns";
 
 export const createSurvey = async (
@@ -128,49 +131,30 @@ export const getSurveyCollectors = async (
   return surveyCollectorsData;
 };
 
-export const getQuestionResults = async (surveyId: string, page: number) => {
-  const questions = await getQuestions(surveyId, page);
+export const getSurveyPageQuestionResults = async (
+  surveyId: string,
+  pageId?: string
+) => {
+  const [questions, totalSurveyResponses] = await Promise.all([
+    getPageQuestions(surveyId, pageId ?? ""),
+    surveyResponseRepository.getSurveyResponseCount(surveyId),
+  ]);
 
-  const totalSurveyResponses = await prisma.surveyResponse.count({
-    where: { surveyId },
-  });
+  const questionResponses =
+    await questionResponseRepository.getQuestionResponseCountPerQuestion(
+      questions.map((q) => q.id)
+    );
 
-  const questionResponses = await prisma.questionResponse.groupBy({
-    by: ["questionId"],
-    where: {
-      questionId: {
-        in: questions.map((q) => q.id),
-      },
-    },
-    _count: true,
-  });
+  const choiceResponseResults =
+    await questionAnswerRepository.getChoiceCountPerQuestion(
+      questions.filter((q) => q.type !== QuestionType.textbox).map((q) => q.id)
+    );
 
-  const choiceResponses = await prisma.questionAnswer.groupBy({
-    by: ["questionOptionId"],
-    where: {
-      questionId: {
-        in: questions
-          .filter((q) => q.type !== QuestionType.textbox)
-          .map((q) => q.id),
-      },
-    },
-
-    _count: true,
-  });
-
-  const textboxResponses = (
+  const textboxQuestionAnswers = (
     await Promise.all(
       questions
         .filter((q) => q.type == QuestionType.textbox)
-        .map((q) =>
-          prisma.questionAnswer.findMany({
-            where: { questionId: q.id },
-            orderBy: {
-              created_at: "asc",
-            },
-            take: 20,
-          })
-        )
+        .map((q) => questionAnswerRepository.getQuestionAnswers(q.id))
     )
   ).flat();
 
@@ -182,7 +166,7 @@ export const getQuestionResults = async (surveyId: string, page: number) => {
         ...q,
         answeredCount: questionResponsesCount,
         skippedCount: totalSurveyResponses - questionResponsesCount,
-        answers: textboxResponses
+        answers: textboxQuestionAnswers
           .filter((answer) => answer.questionId === q.id)
           .map((answer) => ({
             id: answer.id,
@@ -198,8 +182,9 @@ export const getQuestionResults = async (surveyId: string, page: number) => {
         skippedCount: totalSurveyResponses - questionResponsesCount,
         choices: q.options.map((qChoice) => {
           const choiceResponsesCount =
-            choiceResponses.find((cRes) => cRes.questionOptionId === qChoice.id)
-              ?._count || 0;
+            choiceResponseResults.find(
+              (cRes) => cRes.questionOptionId === qChoice.id
+            )?._count || 0;
           return {
             ...qChoice,
             answeredCount: choiceResponsesCount,
@@ -301,6 +286,10 @@ export const getQuestionsResult = async (
   });
 
   return questionsResults;
+};
+
+export const getPageQuestions = async (surveyId: string, pageId: string) => {
+  return await questionRepository.getQuestionsByPageId(surveyId, pageId);
 };
 
 export const getQuestions = async (

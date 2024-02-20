@@ -24,6 +24,12 @@ export const getSurveyResponsesBySurveyId = async (
   });
 };
 
+export const getSurveyResponseCount = async (surveyId: string) => {
+  return await prisma.surveyResponse.count({
+    where: { surveyId },
+  });
+};
+
 export const getSurveyResponseCountRangeDate = async (
   surveyId: string,
   gte: string,

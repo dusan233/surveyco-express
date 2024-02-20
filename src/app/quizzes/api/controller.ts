@@ -26,7 +26,7 @@ import {
   getSurveyQuestionCount,
   getSurveyStatus,
   getSurveyResponseQuestionResponses2,
-  getQuestionResults,
+  getSurveyPageQuestionResults,
 } from "../domain/services";
 import {
   CollectorParams,
@@ -983,28 +983,28 @@ const getSurveyQuestionsAndResponsesHandler = async (
   });
 };
 const getQuestionResultsHandler = async (
-  req: Request<SurveyParams, any, never, { page?: string }>,
+  req: Request<SurveyParams, any, never, { pageId?: string }>,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
-  const page = Number(req.query.page);
-  const pageNum = isNaN(page) ? 1 : page;
-
-  const survey = await getSurvey(surveyId);
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
+  console.log("here");
+  if (!req.query.pageId)
+    throw new AppErr(
+      "BadRequest",
+      "Invalid inputs.",
+      HttpStatusCode.BAD_REQUEST,
       true
     );
 
-  const questionsResults = await getQuestionResults(surveyId, pageNum);
+  const survey = await surveyService.getSurveyById(surveyId);
+  assertSurveyExists(survey);
+  assertUserCreatedSurvey(survey!, userId);
+
+  const questionsResults = await getSurveyPageQuestionResults(
+    surveyId,
+    req.query.pageId
+  );
 
   return res.status(HttpStatusCode.OK).json(questionsResults);
 };
