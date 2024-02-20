@@ -3,6 +3,7 @@ import { CreateSurveyData, HttpStatusCode } from "../../../types/types";
 import {
   createQuizSchema,
   surveyCollectorsQueryParamsSchema,
+  surveyResponsesQueryParamsSchema,
 } from "../api/schemaValidation";
 import { SurveyRecord } from "../data-access/survey-repository";
 
@@ -43,11 +44,28 @@ export const assertUserCreatedSurvey = (
     );
 };
 
+export const validateSurveyResponsesQueryParams = (queryParams: {
+  [key: string]: string;
+}) => {
+  try {
+    const validatedQParams =
+      surveyResponsesQueryParamsSchema.parse(queryParams);
+    return validatedQParams;
+  } catch (err) {
+    console.log(err);
+    throw new AppError(
+      "BadRequest",
+      "Invalid inputs.",
+      HttpStatusCode.BAD_REQUEST,
+      true
+    );
+  }
+};
+
 export const validateSurveyCollectorsQueryParams = (queryParams: {
   [key: string]: string;
 }) => {
   try {
-    console.log(queryParams);
     const validatedQParams =
       surveyCollectorsQueryParamsSchema.parse(queryParams);
     return validatedQParams;

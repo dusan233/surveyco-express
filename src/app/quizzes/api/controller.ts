@@ -67,6 +67,7 @@ import {
   assertSurveyExists,
   assertUserCreatedSurvey,
   validateSurveyCollectorsQueryParams,
+  validateSurveyResponsesQueryParams,
 } from "../domain/validators";
 
 const createSurveyHandler = async (req: Request, res: Response) => {
@@ -1119,42 +1120,19 @@ const getSurveyResponsesHandler = async (
 ) => {
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
-  const survey = await getSurvey(surveyId);
-  const page = Number(req.query.page);
-  const pageNum = isNaN(page) ? 1 : page;
+  const survey = await surveyService.getSurveyById(surveyId);
 
-  const sort: { column: string; type: "asc" | "desc" } = req.query.sort
-    ? {
-        column: req.query.sort.split(":")[0],
-        type: req.query.sort.split(":")[1] as "asc" | "desc",
-      }
-    : { column: "updated_at", type: "desc" };
+  const validatedQueryParams = validateSurveyResponsesQueryParams(req.query);
 
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+  assertSurveyExists(survey);
+  assertUserCreatedSurvey(survey!, userId);
 
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
+  const surveyResponsesData = await surveyService.getSurveyResponses(
+    surveyId,
+    validatedQueryParams
+  );
 
-  const [surveyResponses, responsesCount] = await Promise.all([
-    getSurveyResponses(surveyId, pageNum, sort),
-    getSurveyResponseCount(surveyId),
-  ]);
-  const nextPage = responsesCount > pageNum * 30 ? pageNum + 1 : undefined;
-
-  return res.status(HttpStatusCode.OK).json({
-    current_page: pageNum,
-    data: surveyResponses,
-    next_page: nextPage,
-    total_pages: Math.ceil(responsesCount / 30),
-    responses_count: responsesCount,
-  });
+  return res.status(HttpStatusCode.OK).json(surveyResponsesData);
 };
 
 const getSurveyCollectorsHandler = async (
@@ -1175,11 +1153,10 @@ const getSurveyCollectorsHandler = async (
   assertSurveyExists(survey);
   assertUserCreatedSurvey(survey!, userId);
 
-  const surveyCollectors = await surveyService.getSurveyCollectors(surveyId, {
-    take: validatedQueryParams.take,
-    page: validatedQueryParams.page,
-    sort: validatedQueryParams.sort,
-  });
+  const surveyCollectors = await surveyService.getSurveyCollectors(
+    surveyId,
+    validatedQueryParams
+  );
 
   return res.status(HttpStatusCode.OK).json(surveyCollectors);
 };

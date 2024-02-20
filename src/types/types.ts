@@ -25,6 +25,17 @@ export type UpdateCollectorNameData = z.infer<
 >;
 export type OrderByObject = { column: string; type: "asc" | "desc" };
 
+export type SurveyResponseRecord = {
+  id: string;
+  created_at: Date;
+  updated_at: Date | null;
+  surveyId: string;
+  collectorId: string;
+  status: string;
+  ip_address: string;
+  display_number: number;
+  collector: CollectrorRecord;
+};
 export type CollectrorRecord = {
   id: string;
   type: string;
@@ -41,6 +52,11 @@ export type SurveyDTO = SurveyRecord & {
   survey_status: SurveyStatus;
 };
 
+export type SurveyResponsesDTO = {
+  data: SurveyResponseRecord[];
+  total_pages: number;
+  responses_count: number;
+};
 export type SurveyCollectorsDTO = {
   data: (CollectrorRecord & {
     total_responses: number;

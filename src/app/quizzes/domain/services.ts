@@ -9,6 +9,7 @@ import {
   Question as Questione,
   SaveSurveyResponseRequestBody,
   SurveyCollectorsDTO,
+  SurveyResponsesDTO,
   SurveyStatus,
 } from "../../../types/types";
 import { AppError } from "../../../lib/errors";
@@ -63,24 +64,29 @@ export const getSurveyResponse = async (
 
 export const getSurveyResponses = async (
   surveyId: string,
-  page: number,
-  sort: { column: string; type: "asc" | "desc" }
+  params: {
+    page: number;
+    sort: OrderByObject;
+  }
 ) => {
   const take = 30;
-  const skip = (page - 1) * take;
-  const orderBy =
-    sort.column === "collector"
-      ? { collector: { name: sort.type } }
-      : { [sort.column]: sort.type };
-  return await prisma.surveyResponse.findMany({
-    where: { surveyId },
-    orderBy: [orderBy, { display_number: "asc" }],
-    take,
-    skip,
-    include: {
-      collector: true,
-    },
-  });
+  const skip = (params.page - 1) * take;
+  const [responses, responsesCount] = await Promise.all([
+    surveyResponseRepository.getSurveyResponsesBySurveyId(surveyId, {
+      take,
+      skip,
+      sort: params.sort,
+    }),
+    surveyRepository.getSurveyResponseCount(surveyId),
+  ]);
+
+  const responsesData: SurveyResponsesDTO = {
+    data: responses,
+    total_pages: Math.ceil(responsesCount / take),
+    responses_count: responsesCount,
+  };
+
+  return responsesData;
 };
 
 export const getSurveyCollectors = async (
