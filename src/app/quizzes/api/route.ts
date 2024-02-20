@@ -81,7 +81,7 @@ router.post(
 router.get(
   "/:surveyId/questions/result",
   ClerkExpressRequireAuth(),
-  asyncHandler(quizController.getQuestionResultsHandler)
+  asyncHandler(quizController.getPageQuestionResultsHandler)
 );
 
 router.get(

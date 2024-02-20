@@ -982,7 +982,7 @@ const getSurveyQuestionsAndResponsesHandler = async (
     page,
   });
 };
-const getQuestionResultsHandler = async (
+const getPageQuestionResultsHandler = async (
   req: Request<SurveyParams, any, never, { pageId?: string }>,
   res: Response
 ) => {
@@ -1305,5 +1305,5 @@ export default {
   getSurveyResponseHandler,
   getSurveyResponseAnswersHandler,
   getSurveyResponsesVolumeHandler,
-  getQuestionResultsHandler,
+  getPageQuestionResultsHandler,
 };
