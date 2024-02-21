@@ -834,10 +834,8 @@ const saveSurveyResponseHandler = async (
       "",
       true
     );
-
   if (collectorId === "preview")
     return res.status(HttpStatusCode.ACCEPTED).json({ submitted: submit });
-
   const collector = await getSurveyCollector(collectorId);
   if (!collector || collector.surveyId !== surveyId)
     throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
@@ -1185,34 +1183,31 @@ const getSurveyCollectorsHandler = async (
 };
 
 const getSurveyQuestionsHandler = async (
-  req: Request<SurveyParams, any, never, { page?: string }>,
+  req: Request<SurveyParams, any, never, { pageId?: string }>,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;
-  const userId = req.auth.userId;
-  const survey = await getSurvey(surveyId);
-  const page = Number(req.query.page);
 
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
+  if (!req.query.pageId)
+    throw new AppErr(
+      "BadRequest",
+      "Invalid inputs.",
+      HttpStatusCode.BAD_REQUEST,
       true
     );
 
-  const questions = await getQuestions(surveyId, page);
-  // res.on("finish", () => {
-  //   const setCookieHeader = res.get("Set-Cookie");
-  //   console.log(res.getHeaders());
-  //   console.log("Set-Cookie Header:", setCookieHeader);
-  // });
+  const survey = await surveyService.getSurveyById(surveyId);
 
-  return res.status(HttpStatusCode.OK).json({ questions, page });
+  assertSurveyExists(survey);
+
+  const questions = await surveyService.getPageQuestions(
+    surveyId,
+    req.query.pageId
+  );
+
+  return res
+    .status(HttpStatusCode.OK)
+    .json({ questions, page: req.query.pageId });
 };
 
 const deleteSurveyPageHandler = async (

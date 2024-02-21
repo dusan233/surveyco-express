@@ -30,7 +30,6 @@ router.get(
 );
 router.get(
   "/:surveyId/questions",
-  ClerkExpressRequireAuth(),
   asyncHandler(quizController.getSurveyQuestionsHandler)
 );
 
