@@ -8,3 +8,7 @@ export const getSurveyPages = async (surveyId: string) => {
 
   return pages;
 };
+
+export const getSurveyPageById = async (pageId: string) => {
+  return await prisma.surveyPage.findUnique({ where: { id: pageId } });
+};

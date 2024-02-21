@@ -131,12 +131,17 @@ export const getSurveyCollectors = async (
   return surveyCollectorsData;
 };
 
+export const getSurveyPage = async (pageId: string) => {
+  const page = await surveyPageRepository.getSurveyPageById(pageId);
+  return page;
+};
+
 export const getSurveyPageQuestionResults = async (
   surveyId: string,
-  pageId?: string
+  pageId: string
 ) => {
   const [questions, totalSurveyResponses] = await Promise.all([
-    getPageQuestions(surveyId, pageId ?? ""),
+    getPageQuestions(surveyId, pageId),
     surveyResponseRepository.getSurveyResponseCount(surveyId),
   ]);
 

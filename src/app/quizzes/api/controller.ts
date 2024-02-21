@@ -988,7 +988,7 @@ const getPageQuestionResultsHandler = async (
 ) => {
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
-  console.log("here");
+
   if (!req.query.pageId)
     throw new AppErr(
       "BadRequest",
@@ -997,9 +997,21 @@ const getPageQuestionResultsHandler = async (
       true
     );
 
-  const survey = await surveyService.getSurveyById(surveyId);
+  const [survey, page] = await Promise.all([
+    surveyService.getSurveyById(surveyId),
+    surveyService.getSurveyPage(req.query.pageId),
+  ]);
+
   assertSurveyExists(survey);
   assertUserCreatedSurvey(survey!, userId);
+
+  if (!page || page.surveyId !== surveyId)
+    throw new AppErr(
+      "NotFound",
+      "Resource not found.",
+      HttpStatusCode.NOT_FOUND,
+      true
+    );
 
   const questionsResults = await getSurveyPageQuestionResults(
     surveyId,
@@ -1008,6 +1020,7 @@ const getPageQuestionResultsHandler = async (
 
   return res.status(HttpStatusCode.OK).json(questionsResults);
 };
+
 const getQuestionsResultHandler = async (
   req: Request<SurveyParams, never, GetQuestionResultsRequestBody>,
   res: Response
