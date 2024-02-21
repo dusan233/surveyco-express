@@ -57,12 +57,7 @@ export const getSurveyResponse = async (
   surveyId: string,
   responseId: string
 ) => {
-  return await prisma.surveyResponse.findUnique({
-    where: { id: responseId, surveyId },
-    include: {
-      collector: true,
-    },
-  });
+  return await surveyResponseRepository.getSurveyResponse(responseId, surveyId);
 };
 
 export const getSurveyResponses = async (
@@ -872,24 +867,23 @@ export const getSurveyResponseVolume = async (surveyId: string) => {
   return dateObjects;
 };
 
-export const getSurveyResponseQuestionResponses2 = async (
+export const getSurveyResponseData = async (
   surveyResponseId: string,
   surveyId: string,
-  page: number
+  pageId: string
 ) => {
-  const questions = await getQuestions(surveyId, page);
+  const questions = await questionRepository.getQuestionsByPageId(
+    surveyId,
+    pageId
+  );
   const questionIds = questions.map((q) => q.id);
-  return prisma.questionResponse.findMany({
-    include: {
-      answer: true,
-    },
-    where: {
+  const questionResponses =
+    await questionResponseRepository.getQuestionResponsesForSurveyResponse(
       surveyResponseId,
-      questionId: {
-        in: questionIds,
-      },
-    },
-  });
+      questionIds
+    );
+
+  return { questions, questionResponses };
 };
 
 export const getSurveyResponseQuestionResponses = async (

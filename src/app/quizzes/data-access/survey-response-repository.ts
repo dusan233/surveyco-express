@@ -1,6 +1,18 @@
 import prisma from "../../../prismaClient";
 import { OrderByObject } from "../../../types/types";
 
+export const getSurveyResponse = async (
+  responseId: string,
+  surveyId: string
+) => {
+  return await prisma.surveyResponse.findUnique({
+    where: { id: responseId, surveyId },
+    include: {
+      collector: true,
+    },
+  });
+};
+
 export const getSurveyResponsesBySurveyId = async (
   surveyId: string,
   params: {

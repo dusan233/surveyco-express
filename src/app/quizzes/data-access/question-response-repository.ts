@@ -13,3 +13,20 @@ export const getQuestionResponseCountPerQuestion = async (
     _count: true,
   });
 };
+
+export const getQuestionResponsesForSurveyResponse = async (
+  responseId: string,
+  questionIds: string[]
+) => {
+  return await prisma.questionResponse.findMany({
+    include: {
+      answer: true,
+    },
+    where: {
+      surveyResponseId: responseId,
+      questionId: {
+        in: questionIds,
+      },
+    },
+  });
+};

@@ -25,7 +25,6 @@ import {
   getSurveyCollectorCount,
   getSurveyQuestionCount,
   getSurveyStatus,
-  getSurveyResponseQuestionResponses2,
   getSurveyPageQuestionResults,
 } from "../domain/services";
 import {
@@ -1086,44 +1085,55 @@ const getSurveyResponseHandler = async (
     SurveyParams & { responseId: string },
     any,
     never,
-    { page?: string }
+    { pageId?: string }
   >,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;
   const responseId = req.params.responseId;
   const userId = req.auth.userId;
-  const page = Number(req.query.page);
-  const pageNum = isNaN(page) ? 1 : page;
 
-  const survey = await getSurvey(surveyId);
-
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
+  if (!req.query.pageId)
+    throw new AppErr(
+      "BadRequest",
+      "Invalid inputs.",
+      HttpStatusCode.BAD_REQUEST,
       true
     );
 
-  const [surveyResponse, questions, questionResponses] = await Promise.all([
-    getSurveyResponse(surveyId, responseId),
-    getQuestions(surveyId, pageNum),
-    getSurveyResponseQuestionResponses2(responseId, surveyId, pageNum),
+  const [survey, page] = await Promise.all([
+    surveyService.getSurveyById(surveyId),
+    surveyService.getSurveyPage(req.query.pageId),
+  ]);
+  assertSurveyExists(survey);
+  assertUserCreatedSurvey(survey!, userId);
+
+  if (!page || page.surveyId !== surveyId)
+    throw new AppErr(
+      "NotFound",
+      "Resource not found.",
+      HttpStatusCode.NOT_FOUND,
+      true
+    );
+
+  const [surveyResponse, surveyResponseData] = await Promise.all([
+    surveyService.getSurveyResponse(surveyId, responseId),
+    surveyService.getSurveyResponseData(responseId, surveyId, req.query.pageId),
   ]);
 
   if (!surveyResponse)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+    throw new AppErr(
+      "NotFound",
+      "Resource not found.",
+      HttpStatusCode.NOT_FOUND,
+      true
+    );
 
   return res.status(HttpStatusCode.OK).json({
     surveyResponse,
-    questions,
-    questionResponses,
-    page: pageNum,
+    questions: surveyResponseData.questions,
+    questionResponses: surveyResponseData.questionResponses,
+    page: req.query.pageId,
   });
 };
 
