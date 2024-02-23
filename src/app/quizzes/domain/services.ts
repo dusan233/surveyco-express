@@ -890,17 +890,10 @@ export const getSurveyResponseQuestionResponses = async (
   surveyResponseId: string,
   questionIds: string[]
 ) => {
-  return prisma.questionResponse.findMany({
-    include: {
-      answer: true,
-    },
-    where: {
-      surveyResponseId,
-      questionId: {
-        in: questionIds,
-      },
-    },
-  });
+  return await questionResponseRepository.getQuestionResponsesForSurveyResponse(
+    surveyResponseId,
+    questionIds
+  );
 };
 
 export const checkIfSurveyResponseSubmitted = async (

@@ -2,6 +2,7 @@ import { AppError } from "../../../lib/error-handling";
 import { CreateSurveyData, HttpStatusCode } from "../../../types/types";
 import {
   createQuizSchema,
+  savedQuestionResponsesQueryParamsSchema,
   surveyCollectorsQueryParamsSchema,
   surveyResponsesQueryParamsSchema,
 } from "../api/schemaValidation";
@@ -50,6 +51,24 @@ export const validateSurveyResponsesQueryParams = (queryParams: {
   try {
     const validatedQParams =
       surveyResponsesQueryParamsSchema.parse(queryParams);
+    return validatedQParams;
+  } catch (err) {
+    console.log(err);
+    throw new AppError(
+      "BadRequest",
+      "Invalid inputs.",
+      HttpStatusCode.BAD_REQUEST,
+      true
+    );
+  }
+};
+
+export const validatesavedQuestionResponsesQueryParams = (
+  queryParams: unknown
+) => {
+  try {
+    const validatedQParams =
+      savedQuestionResponsesQueryParamsSchema.parse(queryParams);
     return validatedQParams;
   } catch (err) {
     console.log(err);

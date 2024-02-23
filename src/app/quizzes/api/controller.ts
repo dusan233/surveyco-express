@@ -60,13 +60,18 @@ import {
   sub,
   subDays,
 } from "date-fns";
-import { randomizeArray } from "../../../lib/utils";
+import {
+  getSavedSurveyResponsesFromCookies,
+  randomizeArray,
+} from "../../../lib/utils";
 import * as surveyService from "../domain/services";
+import * as collectorService from "../../collectors/domain/services";
 import {
   assertSurveyExists,
   assertUserCreatedSurvey,
   validateSurveyCollectorsQueryParams,
   validateSurveyResponsesQueryParams,
+  validatesavedQuestionResponsesQueryParams,
 } from "../domain/validators";
 
 const createSurveyHandler = async (req: Request, res: Response) => {
@@ -917,68 +922,64 @@ const saveSurveyResponseHandler = async (
 };
 
 const getSurveyQuestionsAndResponsesHandler = async (
-  req: Request<
-    CollectorParams,
-    any,
-    never,
-    { page?: string; collectorId?: string }
-  >,
+  req: Request<CollectorParams, any, never, unknown>,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;
-  const collectorId = req.query.collectorId;
-  const survey = await getSurvey(surveyId);
-  const page = Number(req.query.page);
 
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+  const validatedQParams = validatesavedQuestionResponsesQueryParams(req.query);
+  const collectorId = validatedQParams.collectorId;
+  const surveyPageId = validatedQParams.pageId;
 
-  const questions = (await getQuestions(surveyId, page)).map((question) => {
-    if (question.randomize)
-      return { ...question, options: randomizeArray(question.options) };
+  const [survey, page, questions, collector] = await Promise.all([
+    surveyService.getSurveyById(surveyId),
+    surveyService.getSurveyPage(surveyPageId),
+    surveyService.getPageQuestions(surveyId, surveyPageId),
+    collectorService.getSurveyCollector(collectorId),
+  ]);
 
-    return question;
-  });
-
-  if (req.signedCookies && req.signedCookies.surveyResponses) {
-    const surveyResponses: {
-      id: string;
-      surveyId: string;
-      collectorId: string;
-      submitted: boolean;
-    }[] = JSON.parse(req.signedCookies.surveyResponses);
-
-    const responseExists = surveyResponses.find(
-      (response) =>
-        response.surveyId === surveyId && collectorId === response.collectorId
+  assertSurveyExists(survey);
+  if (
+    !page ||
+    page.surveyId !== surveyId ||
+    !collector ||
+    collector.surveyId !== surveyId
+  )
+    throw new AppErr(
+      "BadRequest",
+      "Invalid inputs.",
+      HttpStatusCode.BAD_REQUEST,
+      true
     );
+  //if survey/collector bond already submitted throw
 
-    if (responseExists) {
-      const questionResponses = await getSurveyResponseQuestionResponses(
+  const previousResponses = getSavedSurveyResponsesFromCookies(
+    req.signedCookies
+  );
+  const responseExists = previousResponses.find(
+    (response) =>
+      response.surveyId === surveyId && collectorId === response.collectorId
+  );
+
+  const questionResponses = responseExists
+    ? await surveyService.getSurveyResponseQuestionResponses(
         responseExists.id,
         questions.map((q) => q.id)
-      );
-
-      return res.status(HttpStatusCode.OK).json({
-        questions,
-        questionResponses,
-        page,
-      });
-    }
-
-    return res.status(HttpStatusCode.OK).json({
-      questions,
-      questionResponses: [],
-      page,
-    });
-  }
+      )
+    : [];
 
   return res.status(HttpStatusCode.OK).json({
-    questions,
-    questionResponses: [],
-    page,
+    questions: questions.map((question) => {
+      if (question.randomize)
+        return { ...question, options: randomizeArray(question.options) };
+
+      return question;
+    }),
+    questionResponses,
+    page: surveyPageId,
   });
 };
+
 const getPageQuestionResultsHandler = async (
   req: Request<SurveyParams, any, never, { pageId?: string }>,
   res: Response

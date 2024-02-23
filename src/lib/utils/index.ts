@@ -1,3 +1,5 @@
+import { Request } from "express";
+
 export function randomizeArray<T>(array: T[]): T[] {
   const newArray = [...array];
 
@@ -8,3 +10,20 @@ export function randomizeArray<T>(array: T[]): T[] {
 
   return newArray;
 }
+
+export const getSavedSurveyResponsesFromCookies = (signedCookies: {
+  [key: string]: string;
+}) => {
+  if (signedCookies && signedCookies.surveyResponses) {
+    const surveyResponses: {
+      id: string;
+      surveyId: string;
+      collectorId: string;
+      submitted: boolean;
+    }[] = JSON.parse(signedCookies.surveyResponses);
+
+    return surveyResponses;
+  }
+
+  return [];
+};

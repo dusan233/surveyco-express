@@ -151,6 +151,11 @@ export const surveyResponsesQueryParamsSchema = z.object({
     }),
 });
 
+export const savedQuestionResponsesQueryParamsSchema = z.object({
+  pageId: z.string(),
+  collectorId: z.string(),
+});
+
 export const surveyCollectorsQueryParamsSchema = z.object({
   page: z
     .string()
