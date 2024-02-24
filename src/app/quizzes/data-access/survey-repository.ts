@@ -55,6 +55,17 @@ export const getSurveyCollectorStatuses = async (surveyId: string) => {
   ).map((collector) => collector.status);
 };
 
+export const getSurveyIfUpdated = async (surveyId: string, date: Date) => {
+  return await prisma.quiz.findUnique({
+    where: {
+      id: surveyId,
+      updated_at: {
+        gte: new Date(date).toISOString(),
+      },
+    },
+  });
+};
+
 export const getUserSurveys = async (
   take: number,
   skip: number,

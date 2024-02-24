@@ -22,6 +22,20 @@ export const validateNewSurvey = (newSurvey: CreateSurveyData) => {
   }
 };
 
+export const assertCollectorNotFinished = (
+  blockedCollectors: string[],
+  collectorId: string
+) => {
+  if (blockedCollectors.includes(collectorId)) {
+    throw new AppError(
+      "Unauthorized",
+      "Already finished taking of this survey collector!",
+      HttpStatusCode.UNAUTHORIZED,
+      true
+    );
+  }
+};
+
 export const assertSurveyExists = (survey: SurveyRecord | null) => {
   if (!survey)
     throw new AppError(

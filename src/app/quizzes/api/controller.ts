@@ -61,18 +61,26 @@ import {
   subDays,
 } from "date-fns";
 import {
+  getBlockedCollectorsFromCookies,
   getSavedSurveyResponsesFromCookies,
   randomizeArray,
+  setBlockedCollectorsCookie,
+  setSurveyResponseDataCookie,
 } from "../../../lib/utils";
 import * as surveyService from "../domain/services";
 import * as collectorService from "../../collectors/domain/services";
 import {
+  assertCollectorNotFinished,
   assertSurveyExists,
   assertUserCreatedSurvey,
   validateSurveyCollectorsQueryParams,
   validateSurveyResponsesQueryParams,
   validatesavedQuestionResponsesQueryParams,
 } from "../domain/validators";
+import {
+  assertCollectorBelongsToSurvey,
+  assertCollectorExists,
+} from "../../collectors/domain/validators";
 
 const createSurveyHandler = async (req: Request, res: Response) => {
   const userId = req.auth.userId;
@@ -782,12 +790,7 @@ const getSurveyResponseQuestionResponsesHandler = async (
 };
 
 const saveSurveyResponseHandler = async (
-  req: Request<
-    SurveyParams,
-    any,
-    SaveSurveyResponseRequestBody,
-    { type: string }
-  >,
+  req: Request<SurveyParams, any, SaveSurveyResponseRequestBody>,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;
@@ -795,101 +798,54 @@ const saveSurveyResponseHandler = async (
   const submit = req.body.submit ? true : false;
 
   const responderIPAddress = req.ip;
-  const blockedCollectorIds: string[] =
-    (req.cookies &&
-      req.cookies.blocked_col &&
-      JSON.parse(req.cookies.blocked_col)) ??
-    [];
-  const surveyResponses: {
-    id: string;
-    surveyId: string;
-    collectorId: string;
-    submitted: boolean;
-  }[] =
-    (req.signedCookies &&
-      req.signedCookies.surveyResponses &&
-      JSON.parse(req.signedCookies.surveyResponses)) ??
-    [];
 
-  if (blockedCollectorIds.includes(collectorId)) {
-    throw new AppError(
-      "",
-      "Already done!",
-      HttpStatusCode.BAD_REQUEST,
-      "",
-      true
-    );
-  }
+  const blockedCollectorIds = getBlockedCollectorsFromCookies(
+    req.signedCookies
+  );
+  const surveyResponses = getSavedSurveyResponsesFromCookies(req.signedCookies);
 
+  assertCollectorNotFinished(blockedCollectorIds, collectorId);
+  const [survey, collector] = await Promise.all([
+    surveyService.getSurveyById(surveyId),
+    collectorService.getSurveyCollector(collectorId),
+  ]);
   //check if questions got updated
-  const changeExists = await prisma.quiz.findUnique({
-    where: {
-      id: surveyId,
-      updated_at: {
-        gte: new Date(req.body.surveyResposneStartTime).toISOString(),
-      },
-    },
-  });
+  await surveyService.checkForSurveyUpdated(
+    surveyId,
+    req.body.surveyResposneStartTime
+  );
 
-  if (changeExists)
-    throw new AppError(
-      "",
-      "Resource changed!",
-      HttpStatusCode.CONFLICT,
-      "",
-      true
-    );
   if (collectorId === "preview")
     return res.status(HttpStatusCode.ACCEPTED).json({ submitted: submit });
-  const collector = await getSurveyCollector(collectorId);
-  if (!collector || collector.surveyId !== surveyId)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
+
+  assertSurveyExists(survey);
+  assertCollectorExists(collector);
+  assertCollectorBelongsToSurvey(survey!, collector!);
 
   const responseExists = surveyResponses.find(
     (surveyRes) =>
       surveyRes.collectorId === collectorId && surveyRes.surveyId === surveyId
   );
 
+  const surveyResponse = await saveSurveyResponse(
+    req.body,
+    collectorId,
+    surveyId,
+    submit,
+    responderIPAddress,
+    responseExists?.id ?? ""
+  );
   if (responseExists) {
-    //different
-    const surveyResponse = await saveSurveyResponse(
-      req.body,
-      collectorId,
-      surveyId,
-      submit,
-      responderIPAddress,
-      responseExists.id
-    );
-
     if (submit) {
       blockedCollectorIds.push(surveyResponse.collectorId);
-      res.cookie("blocked_col", JSON.stringify(blockedCollectorIds), {
-        secure: false,
-        httpOnly: true,
-        maxAge: 30 * 24 * 60 * 60 * 1000 * 24,
-      });
+      setBlockedCollectorsCookie(res, blockedCollectorIds);
 
       const filteredResponses = surveyResponses.filter(
         (sRes) => sRes.id !== surveyResponse.id
       );
-      res.cookie("surveyResponses", JSON.stringify(filteredResponses), {
-        secure: false,
-        httpOnly: true,
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        signed: true,
-      });
-      return res.status(HttpStatusCode.ACCEPTED).json({ submitted: true });
+      setSurveyResponseDataCookie(res, filteredResponses);
     }
-
-    return res.status(HttpStatusCode.ACCEPTED).json({ submitted: false });
   } else {
-    const surveyResponse = await saveSurveyResponse(
-      req.body,
-      collectorId,
-      surveyId,
-      submit,
-      responderIPAddress
-    );
     const newSurveyResponse = {
       id: surveyResponse.id,
       surveyId,
@@ -899,26 +855,13 @@ const saveSurveyResponseHandler = async (
 
     if (submit) {
       blockedCollectorIds.push(surveyResponse.collectorId);
-      res.cookie("blocked_col", JSON.stringify(blockedCollectorIds), {
-        secure: false,
-        httpOnly: true,
-        maxAge: 30 * 24 * 60 * 60 * 1000 * 24,
-      });
+      setBlockedCollectorsCookie(res, blockedCollectorIds);
     }
-
-    res.cookie(
-      "surveyResponses",
-      JSON.stringify([...surveyResponses, newSurveyResponse]),
-      {
-        secure: false,
-        httpOnly: true,
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        signed: true,
-      }
-    );
-
-    return res.status(HttpStatusCode.ACCEPTED).json({ submitted: submit });
+    const updatedSurveyResponsesData = [...surveyResponses, newSurveyResponse];
+    setSurveyResponseDataCookie(res, updatedSurveyResponsesData);
   }
+
+  return res.status(HttpStatusCode.ACCEPTED).json({ submitted: submit });
 };
 
 const getSurveyQuestionsAndResponsesHandler = async (
@@ -952,6 +895,8 @@ const getSurveyQuestionsAndResponsesHandler = async (
       true
     );
   //if survey/collector bond already submitted throw
+  const blockedCollectors = getBlockedCollectorsFromCookies(req.signedCookies);
+  assertCollectorNotFinished(blockedCollectors, collectorId);
 
   const previousResponses = getSavedSurveyResponsesFromCookies(
     req.signedCookies

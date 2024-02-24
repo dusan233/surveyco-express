@@ -12,6 +12,7 @@ import {
   SurveyResponsesDTO,
   SurveyStatus,
 } from "../../../types/types";
+import { AppError as AppErr } from "../../../lib/error-handling/index";
 import { AppError } from "../../../lib/errors";
 import { validateNewSurvey } from "./validators";
 import * as surveyRepository from "../data-access/survey-repository";
@@ -129,6 +130,18 @@ export const getSurveyCollectors = async (
 export const getSurveyPage = async (pageId: string) => {
   const page = await surveyPageRepository.getSurveyPageById(pageId);
   return page;
+};
+
+export const checkForSurveyUpdated = async (surveyId: string, date: Date) => {
+  const isUpdated = await surveyRepository.getSurveyIfUpdated(surveyId, date);
+
+  if (isUpdated)
+    throw new AppErr(
+      "Conflict",
+      "Resource changed!",
+      HttpStatusCode.CONFLICT,
+      true
+    );
 };
 
 export const getSurveyPageQuestionResults = async (
@@ -906,7 +919,7 @@ export const saveSurveyResponse = async (
   surveyId: string,
   complete: boolean,
   responderIPAddress: string,
-  surveyResponseId?: string
+  surveyResponseId: string | null
 ) => {
   const filledQuestionsResponses = data.questionResponses.filter(
     (response) => response.answer.length !== 0
