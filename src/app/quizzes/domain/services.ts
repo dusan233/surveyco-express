@@ -935,31 +935,51 @@ export const saveSurveyResponse = async (
 ) => {
   const validatedData = validateSaveSurveyResponse(surveyResponseData);
 
-  const [page, survey, collector, pageQuestions] = await Promise.all([
+  const [page, survey, pageQuestions, surveyPages] = await Promise.all([
     getSurveyPage(surveyResponseData.pageId),
     getSurveyById(surveyId),
-    collectorService.getSurveyCollector(surveyResponseData.collectorId),
     getPageQuestions(surveyId, surveyResponseData.pageId),
+    getSurveyPages(surveyId),
   ]);
-
+  // check if responses exist for provided ids.
   assertSurveyExists(survey);
-  assertCollectorExists(collector);
-  assertCollectorBelongsToSurvey(survey!, collector!);
+
   assertPageExists(page);
   assertPageBelongsToSurvey(page!, surveyId);
   assertQuestionResponsesDataIsValid(
     validatedData.questionResponses,
     pageQuestions
   );
+
+  const submitting =
+    surveyPages.find((page) => page.number === surveyPages.length)?.id ===
+    surveyResponseData.pageId;
   // make sure all required qeustions are answered before submit complete
-  //determine if is submiting
-  //check if question responses belong to questions on this page
+  if (submitting && surveyPages.length >= 2) {
+  }
+
+  await checkForSurveyUpdated(
+    surveyId,
+    surveyResponseData.surveyResposneStartTime
+  );
+
+  if (surveyResponseData.isPreview)
+    return {
+      id: "preview",
+      status: submitting ? "complete" : "incomplete",
+    };
+
+  const collector = await collectorService.getSurveyCollector(
+    surveyResponseData.collectorId!
+  );
+  assertCollectorExists(collector);
+  assertCollectorBelongsToSurvey(survey!, collector!);
 
   const saveResponseData = {
     data: validatedData,
-    collectorId: validatedData.collectorId,
+    collectorId: validatedData.collectorId!,
     surveyId,
-    complete: true,
+    complete: submitting,
     responderIPAddress,
     surveyResponseId: responseId ?? null,
   };

@@ -20,27 +20,39 @@ export const getQuestionResultsSchema = z.object({
   questionIds: z.array(z.string()),
 });
 
-export const saveSurveyResponseSchema = z.object({
-  questionResponses: z.array(
-    z
-      .object({
-        id: z.string().optional(),
-        questionId: z.string(),
-        answer: z.string().or(z.array(z.string())),
-        questionType: z.nativeEnum(QuestionType),
-      })
-      .refine((questionRes) => {
-        if (questionRes.questionType === QuestionType.checkboxes) {
-          if (!Array.isArray(questionRes.answer)) return false;
-        } else {
-          if (typeof questionRes.answer !== "string") return false;
-        }
-      }, "Invalid input format.")
-  ),
-  collectorId: z.string(),
-  pageId: z.string(),
-  surveyResposneStartTime: z.coerce.date(),
-});
+export const saveSurveyResponseSchema = z
+  .object({
+    questionResponses: z.array(
+      z
+        .object({
+          id: z.string().optional(),
+          questionId: z.string(),
+          answer: z.string().or(z.array(z.string())),
+          questionType: z.nativeEnum(QuestionType),
+        })
+        .refine((questionRes) => {
+          if (questionRes.questionType === QuestionType.checkboxes) {
+            if (!Array.isArray(questionRes.answer)) return false;
+          } else {
+            if (typeof questionRes.answer !== "string") return false;
+          }
+
+          return true;
+        }, "Invalid input format.")
+    ),
+    collectorId: z.string().or(z.null()),
+    pageId: z.string(),
+    isPreview: z.boolean(),
+    surveyResposneStartTime: z.coerce.date(),
+  })
+  .refine((values) => {
+    if (values.isPreview && typeof values.collectorId === "string")
+      return false;
+    if (!values.isPreview && typeof values.collectorId !== "string")
+      return false;
+
+    return true;
+  }, "Invalid input format.");
 
 export const surveyResponseQuestionResponseSchema = z.object({
   questionsIds: z.array(z.string()),

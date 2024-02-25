@@ -73,6 +73,7 @@ import {
   assertCollectorNotFinished,
   assertSurveyExists,
   assertUserCreatedSurvey,
+  validateSaveSurveyResponse,
   validateSurveyCollectorsQueryParams,
   validateSurveyResponsesQueryParams,
   validatesavedQuestionResponsesQueryParams,
@@ -795,72 +796,75 @@ const saveSurveyResponseHandler = async (
 ) => {
   const surveyId = req.params.surveyId;
   const collectorId = req.body.collectorId;
-  const submit = true;
-
   const responderIPAddress = req.ip;
 
-  const blockedCollectorIds = getBlockedCollectorsFromCookies(
-    req.signedCookies
-  );
-  const surveyResponses = getSavedSurveyResponsesFromCookies(req.signedCookies);
+  const validatedData = validateSaveSurveyResponse(req.body);
 
-  assertCollectorNotFinished(blockedCollectorIds, collectorId);
-  const [survey, collector] = await Promise.all([
-    surveyService.getSurveyById(surveyId),
-    collectorService.getSurveyCollector(collectorId),
-  ]);
-  //check if questions got updated
-  await surveyService.checkForSurveyUpdated(
-    surveyId,
-    req.body.surveyResposneStartTime
-  );
+  if (validatedData.isPreview) {
+    const surveyResponse = await surveyService.saveSurveyResponse(
+      validatedData,
+      responderIPAddress,
+      null,
+      surveyId
+    );
+    const submit = surveyResponse.status === "complete";
 
-  if (collectorId === "preview")
     return res.status(HttpStatusCode.ACCEPTED).json({ submitted: submit });
-
-  assertSurveyExists(survey);
-  assertCollectorExists(collector);
-  assertCollectorBelongsToSurvey(survey!, collector!);
-
-  const responseExists = surveyResponses.find(
-    (surveyRes) =>
-      surveyRes.collectorId === collectorId && surveyRes.surveyId === surveyId
-  );
-
-  const surveyResponse = await surveyService.saveSurveyResponse(
-    req.body,
-    responderIPAddress,
-    responseExists?.id ?? null,
-    surveyId
-  );
-
-  if (responseExists) {
-    if (submit) {
-      blockedCollectorIds.push(surveyResponse.collectorId);
-      setBlockedCollectorsCookie(res, blockedCollectorIds);
-
-      const filteredResponses = surveyResponses.filter(
-        (sRes) => sRes.id !== surveyResponse.id
-      );
-      setSurveyResponseDataCookie(res, filteredResponses);
-    }
   } else {
-    const newSurveyResponse = {
-      id: surveyResponse.id,
-      surveyId,
-      collectorId,
-      submitted: submit,
-    };
+    const blockedCollectorIds = getBlockedCollectorsFromCookies(
+      req.signedCookies
+    );
+    const surveyResponses = getSavedSurveyResponsesFromCookies(
+      req.signedCookies
+    );
+    assertCollectorNotFinished(blockedCollectorIds, collectorId ?? "");
 
-    if (submit) {
-      blockedCollectorIds.push(surveyResponse.collectorId);
-      setBlockedCollectorsCookie(res, blockedCollectorIds);
+    const responseExists = surveyResponses.find(
+      (surveyRes) =>
+        surveyRes.collectorId === collectorId && surveyRes.surveyId === surveyId
+    );
+
+    const surveyResponse = await surveyService.saveSurveyResponse(
+      validatedData,
+      responderIPAddress,
+      responseExists?.id ?? null,
+      surveyId
+    );
+    const submit = surveyResponse.status === "complete";
+
+    if (surveyResponse.id !== "preview") {
+      if (responseExists) {
+        if (submit) {
+          blockedCollectorIds.push(collectorId!);
+          setBlockedCollectorsCookie(res, blockedCollectorIds);
+
+          const filteredResponses = surveyResponses.filter(
+            (sRes) => sRes.id !== surveyResponse.id
+          );
+          setSurveyResponseDataCookie(res, filteredResponses);
+        }
+      } else {
+        if (submit) {
+          blockedCollectorIds.push(collectorId!);
+          setBlockedCollectorsCookie(res, blockedCollectorIds);
+        } else {
+          const newSurveyResponse = {
+            id: surveyResponse.id,
+            surveyId,
+            collectorId: collectorId!,
+            submitted: submit,
+          };
+          const updatedSurveyResponsesData = [
+            ...surveyResponses,
+            newSurveyResponse,
+          ];
+          setSurveyResponseDataCookie(res, updatedSurveyResponsesData);
+        }
+      }
     }
-    const updatedSurveyResponsesData = [...surveyResponses, newSurveyResponse];
-    setSurveyResponseDataCookie(res, updatedSurveyResponsesData);
-  }
 
-  return res.status(HttpStatusCode.ACCEPTED).json({ submitted: submit });
+    return res.status(HttpStatusCode.ACCEPTED).json({ submitted: submit });
+  }
 };
 
 const getSurveyQuestionsAndResponsesHandler = async (
