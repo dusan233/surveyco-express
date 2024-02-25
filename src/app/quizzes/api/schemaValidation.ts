@@ -26,21 +26,19 @@ export const saveSurveyResponseSchema = z.object({
       .object({
         id: z.string().optional(),
         questionId: z.string(),
-        required: z.boolean(),
         answer: z.string().or(z.array(z.string())),
         questionType: z.nativeEnum(QuestionType),
       })
-      .refine((question) => {
-        if (question.questionType && question.required) {
-          if (question.answer === "") return false;
+      .refine((questionRes) => {
+        if (questionRes.questionType === QuestionType.checkboxes) {
+          if (!Array.isArray(questionRes.answer)) return false;
         } else {
-          if (question.required && question.answer.length === 0) return false;
+          if (typeof questionRes.answer !== "string") return false;
         }
-        return true;
-      }, "Answer for this question is required")
+      }, "Invalid input format.")
   ),
   collectorId: z.string(),
-  submit: z.boolean().optional(),
+  pageId: z.string(),
   surveyResposneStartTime: z.coerce.date(),
 });
 

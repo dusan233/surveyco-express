@@ -7,6 +7,8 @@ import {
   OrderByObject,
   QuestionType,
   Question as Questione,
+  SaveSurveyResponseDTO,
+  SaveSurveyResponseData,
   SaveSurveyResponseRequestBody,
   SurveyCollectorsDTO,
   SurveyResponsesDTO,
@@ -14,7 +16,15 @@ import {
 } from "../../../types/types";
 import { AppError as AppErr } from "../../../lib/error-handling/index";
 import { AppError } from "../../../lib/errors";
-import { validateNewSurvey } from "./validators";
+import {
+  assertPageBelongsToSurvey,
+  assertPageExists,
+  assertQuestionResponsesDataIsValid,
+  assertSurveyExists,
+  validateNewSurvey,
+  validateSaveSurveyResponse,
+} from "./validators";
+import * as collectorService from "../../collectors/domain/services";
 import * as surveyRepository from "../data-access/survey-repository";
 import * as surveyResponseRepository from "../data-access/survey-response-repository";
 import * as collectorRepository from "../../collectors/data-access/collectors.repository";
@@ -23,6 +33,10 @@ import * as questionResponseRepository from "../data-access/question-response-re
 import * as questionAnswerRepository from "../data-access/question-answer-repository";
 import * as questionRepository from "../data-access/question-repository";
 import { add, format, startOfDay } from "date-fns";
+import {
+  assertCollectorBelongsToSurvey,
+  assertCollectorExists,
+} from "../../collectors/domain/validators";
 
 export const createSurvey = async (
   surveyData: CreateSurveyData,
@@ -914,157 +928,43 @@ export const checkIfSurveyResponseSubmitted = async (
 ) => {};
 
 export const saveSurveyResponse = async (
-  data: SaveSurveyResponseRequestBody,
-  collectorId: string,
-  surveyId: string,
-  complete: boolean,
+  surveyResponseData: SaveSurveyResponseData,
   responderIPAddress: string,
-  surveyResponseId: string | null
+  responseId: string | null,
+  surveyId: string
 ) => {
-  const filledQuestionsResponses = data.questionResponses.filter(
-    (response) => response.answer.length !== 0
-  );
+  const validatedData = validateSaveSurveyResponse(surveyResponseData);
 
-  const newQuestionsResponses = data.questionResponses.filter(
-    (response) => response.answer.length !== 0 && !response.id
-  );
-  const surveyResponse = await prisma.surveyResponse.upsert({
-    where: { id: surveyResponseId || "" },
-    create: {
-      collector: {
-        connect: {
-          id: collectorId,
-        },
-      },
-      survey: {
-        connect: {
-          id: surveyId,
-        },
-      },
-      ip_address: responderIPAddress,
-      status: complete ? "complete" : "incomplete",
-      display_number:
-        (await prisma.surveyResponse.count({ where: { surveyId } })) + 1,
-      questionResponses: {
-        create: newQuestionsResponses.map((questionResponse) => ({
-          question: {
-            connect: { id: questionResponse.questionId },
-          },
-          answer: {
-            create:
-              questionResponse.questionType === QuestionType.textbox
-                ? [
-                    {
-                      question: {
-                        connect: { id: questionResponse.questionId },
-                      },
-                      textAnswer: questionResponse.answer as string,
-                    },
-                  ]
-                : typeof questionResponse.answer === "string"
-                ? [
-                    {
-                      question: {
-                        connect: { id: questionResponse.questionId },
-                      },
-                      questionOption: {
-                        connect: { id: questionResponse.answer },
-                      },
-                    },
-                  ]
-                : questionResponse.answer.map((answer) => ({
-                    question: {
-                      connect: { id: questionResponse.questionId },
-                    },
-                    questionOption: {
-                      connect: { id: answer },
-                    },
-                  })),
-          },
-        })),
-      },
-    },
-    update: {
-      status: complete ? "complete" : "incomplete",
-      questionResponses: {
-        upsert: filledQuestionsResponses.map((questionResponse) => ({
-          where: { id: questionResponse.id || "" },
-          create: {
-            question: {
-              connect: { id: questionResponse.questionId },
-            },
-            answer: {
-              create:
-                questionResponse.questionType === QuestionType.textbox
-                  ? [
-                      {
-                        question: {
-                          connect: { id: questionResponse.questionId },
-                        },
-                        textAnswer: questionResponse.answer as string,
-                      },
-                    ]
-                  : typeof questionResponse.answer === "string"
-                  ? [
-                      {
-                        question: {
-                          connect: { id: questionResponse.questionId },
-                        },
-                        questionOption: {
-                          connect: { id: questionResponse.answer },
-                        },
-                      },
-                    ]
-                  : questionResponse.answer.map((answer) => ({
-                      question: {
-                        connect: { id: questionResponse.questionId },
-                      },
-                      questionOption: {
-                        connect: { id: answer },
-                      },
-                    })),
-            },
-          },
-          update: {
-            answer: {
-              deleteMany: {},
-              create:
-                questionResponse.questionType === QuestionType.textbox
-                  ? [
-                      {
-                        question: {
-                          connect: { id: questionResponse.questionId },
-                        },
-                        textAnswer: questionResponse.answer as string,
-                      },
-                    ]
-                  : typeof questionResponse.answer === "string"
-                  ? [
-                      {
-                        question: {
-                          connect: { id: questionResponse.questionId },
-                        },
-                        questionOption: {
-                          connect: { id: questionResponse.answer },
-                        },
-                      },
-                    ]
-                  : questionResponse.answer.map((answer) => ({
-                      question: {
-                        connect: { id: questionResponse.questionId },
-                      },
-                      questionOption: {
-                        connect: { id: answer },
-                      },
-                    })),
-            },
-          },
-        })),
-      },
-    },
-  });
+  const [page, survey, collector, pageQuestions] = await Promise.all([
+    getSurveyPage(surveyResponseData.pageId),
+    getSurveyById(surveyId),
+    collectorService.getSurveyCollector(surveyResponseData.collectorId),
+    getPageQuestions(surveyId, surveyResponseData.pageId),
+  ]);
 
-  return surveyResponse;
+  assertSurveyExists(survey);
+  assertCollectorExists(collector);
+  assertCollectorBelongsToSurvey(survey!, collector!);
+  assertPageExists(page);
+  assertPageBelongsToSurvey(page!, surveyId);
+  assertQuestionResponsesDataIsValid(
+    validatedData.questionResponses,
+    pageQuestions
+  );
+  // make sure all required qeustions are answered before submit complete
+  //determine if is submiting
+  //check if question responses belong to questions on this page
+
+  const saveResponseData = {
+    data: validatedData,
+    collectorId: validatedData.collectorId,
+    surveyId,
+    complete: true,
+    responderIPAddress,
+    surveyResponseId: responseId ?? null,
+  };
+
+  return await surveyResponseRepository.saveSurveyResponse(saveResponseData);
 };
 
 export const getSurveyPages = async (surveyId: string) => {

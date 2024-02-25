@@ -795,7 +795,7 @@ const saveSurveyResponseHandler = async (
 ) => {
   const surveyId = req.params.surveyId;
   const collectorId = req.body.collectorId;
-  const submit = req.body.submit ? true : false;
+  const submit = true;
 
   const responderIPAddress = req.ip;
 
@@ -827,14 +827,13 @@ const saveSurveyResponseHandler = async (
       surveyRes.collectorId === collectorId && surveyRes.surveyId === surveyId
   );
 
-  const surveyResponse = await saveSurveyResponse(
+  const surveyResponse = await surveyService.saveSurveyResponse(
     req.body,
-    collectorId,
-    surveyId,
-    submit,
     responderIPAddress,
-    responseExists?.id ?? ""
+    responseExists?.id ?? null,
+    surveyId
   );
+
   if (responseExists) {
     if (submit) {
       blockedCollectorIds.push(surveyResponse.collectorId);

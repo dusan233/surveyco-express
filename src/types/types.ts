@@ -17,6 +17,7 @@ import { SurveyRecord } from "../app/quizzes/data-access/survey-repository";
 export type CreateSurveyData = z.infer<typeof createQuizSchema>;
 export type CreateSurveyDTO = CreateSurveyData & { userId: string };
 export type CreateCollectorData = z.infer<typeof createSurveyCollectorSchema>;
+export type SaveSurveyResponseData = z.infer<typeof saveSurveyResponseSchema>;
 export type UpdateCollectorStatusData = z.infer<
   typeof updateSurveyCollectorStatusSchema
 >;
@@ -50,6 +51,15 @@ export type SurveyDTO = SurveyRecord & {
   page_count: number;
   question_count: number;
   survey_status: SurveyStatus;
+};
+
+export type SaveSurveyResponseDTO = {
+  data: SaveSurveyResponseRequestBody;
+  collectorId: string;
+  surveyId: string;
+  complete: boolean;
+  responderIPAddress: string;
+  surveyResponseId: string | null;
 };
 
 export type SurveyResponsesDTO = {

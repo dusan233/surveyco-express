@@ -1,7 +1,14 @@
+import { Question, QuestionOption, SurveyPage } from "@prisma/client";
 import { AppError } from "../../../lib/error-handling";
-import { CreateSurveyData, HttpStatusCode } from "../../../types/types";
+import {
+  CreateSurveyData,
+  HttpStatusCode,
+  QuestionType,
+  SaveSurveyResponseData,
+} from "../../../types/types";
 import {
   createQuizSchema,
+  saveSurveyResponseSchema,
   savedQuestionResponsesQueryParamsSchema,
   surveyCollectorsQueryParamsSchema,
   surveyResponsesQueryParamsSchema,
@@ -11,6 +18,22 @@ import { SurveyRecord } from "../data-access/survey-repository";
 export const validateNewSurvey = (newSurvey: CreateSurveyData) => {
   try {
     const data = createQuizSchema.parse(newSurvey);
+    return data;
+  } catch (err) {
+    throw new AppError(
+      "BadRequest",
+      "Invalid arguments for survey creation",
+      HttpStatusCode.BAD_REQUEST,
+      true
+    );
+  }
+};
+
+export const validateSaveSurveyResponse = (
+  saveSurveyResponse: SaveSurveyResponseData
+) => {
+  try {
+    const data = saveSurveyResponseSchema.parse(saveSurveyResponse);
     return data;
   } catch (err) {
     throw new AppError(
@@ -46,6 +69,142 @@ export const assertSurveyExists = (survey: SurveyRecord | null) => {
     );
 };
 
+export const assertPageExists = (survyePage: SurveyPage | null) => {
+  if (!survyePage)
+    throw new AppError(
+      "NotFound",
+      "Resource not found.",
+      HttpStatusCode.NOT_FOUND,
+      true
+    );
+};
+
+export const isMultichoiceQuestionResponseValid = (
+  questionResponse: {
+    questionId: string;
+    answer: (string | string[]) & (string | string[] | undefined);
+    questionType: QuestionType;
+    id?: string | undefined;
+  },
+  question: Question & { options?: QuestionOption[] }
+) => {
+  let isValid = false;
+
+  if (question.required) {
+    isValid = question
+      .options!.map((option) => option.id)
+      .includes(questionResponse.answer as string);
+  } else {
+    isValid =
+      question
+        .options!.map((option) => option.id)
+        .includes(questionResponse.answer as string) ||
+      (questionResponse.answer as string).trim() === "";
+  }
+  return isValid;
+};
+
+export const isTextboxQuestionResponseValid = (
+  questionResponse: {
+    questionId: string;
+    answer: (string | string[]) & (string | string[] | undefined);
+    questionType: QuestionType;
+    id?: string | undefined;
+  },
+  question: Question
+) => {
+  let isValid = true;
+
+  if (question.required) {
+    isValid = (questionResponse.answer as string).trim() !== "";
+  }
+
+  return isValid;
+};
+
+export const isCheckboxQuestionResponseValid = (
+  questionResponse: {
+    questionId: string;
+    answer: (string | string[]) & (string | string[] | undefined);
+    questionType: QuestionType;
+    id?: string | undefined;
+  },
+  question: Question & { options?: QuestionOption[] }
+) => {
+  let isValid = true;
+  if (question.required) {
+    isValid = false;
+    (questionResponse.answer as string[]).forEach((answer) => {
+      if (question.options!.map((option) => option.id).includes(answer))
+        isValid = true;
+    });
+  } else {
+  }
+
+  return isValid;
+};
+
+export const assertQuestionResponsesDataIsValid = (
+  questionResponses: {
+    questionId: string;
+    answer: (string | string[]) & (string | string[] | undefined);
+    questionType: QuestionType;
+    id?: string | undefined;
+  }[],
+  questions: (Question & { options?: QuestionOption[] })[]
+) => {
+  if (questionResponses.length !== questions.length)
+    throw new AppError(
+      "BadRequest",
+      "Invalid inputs.",
+      HttpStatusCode.BAD_REQUEST,
+      true
+    );
+
+  const validQuestionsList = questions.map((q) => {
+    let isValid = true;
+    const questionResponse = questionResponses.find(
+      (qRes) => qRes.questionId === q.id
+    );
+
+    if (!questionResponse) return false;
+
+    if (q.type === QuestionType.checkboxes) {
+      return isCheckboxQuestionResponseValid(questionResponse, q);
+    } else if (
+      [QuestionType.dropdown, QuestionType.multiple_choice].includes(
+        q.type as QuestionType
+      )
+    ) {
+      return isMultichoiceQuestionResponseValid(questionResponse, q);
+    } else if (q.type === QuestionType.textbox) {
+      return isTextboxQuestionResponseValid(questionResponse, q);
+    }
+
+    return isValid;
+  });
+  if (validQuestionsList.includes(false))
+    throw new AppError(
+      "BadRequest",
+      "Invalid inputs.",
+      HttpStatusCode.BAD_REQUEST,
+      true
+    );
+};
+
+export const assertPageBelongsToSurvey = (
+  surveyPage: SurveyPage,
+  surveyId: string
+) => {
+  if (surveyPage.surveyId !== surveyId)
+    throw new AppError(
+      "BadRequest",
+      "Invalid inputs.",
+      HttpStatusCode.BAD_REQUEST,
+      true
+    );
+};
+
 export const assertUserCreatedSurvey = (
   survey: SurveyRecord,
   userId: string
@@ -67,7 +226,6 @@ export const validateSurveyResponsesQueryParams = (queryParams: {
       surveyResponsesQueryParamsSchema.parse(queryParams);
     return validatedQParams;
   } catch (err) {
-    console.log(err);
     throw new AppError(
       "BadRequest",
       "Invalid inputs.",
