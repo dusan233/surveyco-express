@@ -69,8 +69,12 @@ import {
 } from "../../../lib/utils";
 import * as surveyService from "../domain/services";
 import * as collectorService from "../../collectors/domain/services";
+import * as surveyPageUseCase from "../domain/survey-page-use-case";
+import * as surveyQuestionUseCase from "../domain/survey-question-use-case";
 import {
   assertCollectorNotFinished,
+  assertPageBelongsToSurvey,
+  assertPageExists,
   assertSurveyExists,
   assertUserCreatedSurvey,
   validateSaveSurveyResponse,
@@ -641,58 +645,33 @@ const saveQuestionHandler = async (
 };
 
 const updateQuestionHandler = async (
-  req: Request<SurveyParams, any, { data: Question; pageId: string }>,
+  req: Request<SurveyParams>,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
 
-  const survey = await getSurvey(surveyId);
-
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  const updatedQuestion = await updateQuestion(req.body.data, surveyId);
+  const updatedQuestion = await surveyQuestionUseCase.updateQuestion({
+    surveyId,
+    userId,
+    questionData: req.body,
+  });
 
   return res.status(HttpStatusCode.OK).json(updatedQuestion);
 };
 
 const createQuestionHandler = async (
-  req: Request<SurveyParams, any, { data: Question; pageId: string }>,
-  res: Response,
-  next: NextFunction
+  req: Request<SurveyParams>,
+  res: Response
 ) => {
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
 
-  const survey = await getSurvey(surveyId);
-
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  const createdQuestion = await createQuestion(
-    req.body.data,
+  const createdQuestion = await surveyQuestionUseCase.addNewQuestion({
+    questionData: req.body,
     surveyId,
-    req.body.pageId
-  );
+    userId,
+  });
 
   return res.status(HttpStatusCode.CREATED).json(createdQuestion);
 };
@@ -705,26 +684,7 @@ const deleteSurveyQuestionHandler = async (
   const questionId = req.params.questionId;
   const userId = req.auth.userId;
 
-  const [survey, question] = await Promise.all([
-    getSurvey(surveyId),
-    getQuestion(questionId),
-  ]);
-
-  if (!survey || !question)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId || question.quizId !== surveyId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  //here we deleting if question has no responses
-  console.log("pre brisanja bulje");
-  await deleteQuestion(question);
+  await surveyQuestionUseCase.deleteQuestion({ questionId, surveyId, userId });
 
   return res.sendStatus(HttpStatusCode.NO_CONTENT);
 };
@@ -735,21 +695,11 @@ const createSurveyPageHandler = async (
 ) => {
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
-  const survey = await getSurvey(surveyId);
 
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  const createdPage = await createSurveyPage(surveyId);
+  const createdPage = await surveyPageUseCase.createSurveyPage(
+    surveyId,
+    userId
+  );
 
   return res.status(HttpStatusCode.CREATED).json(createdPage);
 };
@@ -1145,9 +1095,14 @@ const getSurveyQuestionsHandler = async (
       true
     );
 
-  const survey = await surveyService.getSurveyById(surveyId);
+  const [survey, page] = await Promise.all([
+    surveyService.getSurveyById(surveyId),
+    surveyService.getSurveyPage(req.query.pageId),
+  ]);
 
   assertSurveyExists(survey);
+  assertPageExists(page);
+  assertPageBelongsToSurvey(page!, survey!.id);
 
   const questions = await surveyService.getPageQuestions(
     surveyId,

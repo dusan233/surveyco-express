@@ -1,0 +1,78 @@
+import * as surveyService from "../domain/services";
+import * as surveyRepository from "../data-access/survey-repository";
+import * as questionRepository from "../data-access/question-repository";
+import {
+  assertQuestionBelongsToSurvey,
+  assertQuestionExists,
+  assertSurveyExists,
+  assertUserCreatedSurvey,
+  validateCreateQuestion,
+  validateUpdateQuestion,
+} from "./validators";
+import { CreateQuestionDTO, UpdateQuestionDTO } from "../../../types/types";
+
+export const updateQuestion = async (data: {
+  questionData: any;
+  surveyId: string;
+  userId: string;
+}) => {
+  const validatedData = validateUpdateQuestion(data.questionData);
+
+  const [survey, question] = await Promise.all([
+    surveyRepository.getSurveyById(data.surveyId),
+    questionRepository.getQuestionById(validatedData.data.id),
+  ]);
+
+  assertSurveyExists(survey);
+  assertUserCreatedSurvey(survey!, data.userId);
+  assertQuestionExists(question);
+  assertQuestionBelongsToSurvey(question!, survey!.id);
+
+  const updateQuestionData: UpdateQuestionDTO = {
+    ...validatedData,
+    surveyId: data.surveyId,
+  };
+
+  return await questionRepository.updateQuestion(updateQuestionData);
+};
+
+export const addNewQuestion = async (data: {
+  questionData: unknown;
+  surveyId: string;
+  userId: string;
+}) => {
+  const validatedData = validateCreateQuestion(data.questionData);
+
+  const [survey] = await Promise.all([
+    surveyRepository.getSurveyById(data.surveyId),
+  ]);
+
+  assertSurveyExists(survey);
+  assertUserCreatedSurvey(survey!, data.userId);
+
+  const newQuestionData: CreateQuestionDTO = {
+    ...validatedData,
+    surveyId: data.surveyId,
+    userId: data.userId,
+  };
+
+  return await questionRepository.addQuestion(newQuestionData);
+};
+
+export const deleteQuestion = async (data: {
+  questionId: string;
+  surveyId: string;
+  userId: string;
+}) => {
+  const [survey, question] = await Promise.all([
+    surveyRepository.getSurveyById(data.surveyId),
+    questionRepository.getQuestionById(data.questionId),
+  ]);
+
+  assertSurveyExists(survey);
+  assertUserCreatedSurvey(survey!, data.userId);
+  assertQuestionExists(question);
+  assertQuestionBelongsToSurvey(question!, survey!.id);
+
+  return await questionRepository.deleteQuestion(data.questionId);
+};

@@ -14,6 +14,10 @@ import {
   surveyResponsesQueryParamsSchema,
 } from "../api/schemaValidation";
 import { SurveyRecord } from "../data-access/survey-repository";
+import {
+  createQuestionSchema,
+  updateQuestionSchema,
+} from "./schema-validation";
 
 export const validateNewSurvey = (newSurvey: CreateSurveyData) => {
   try {
@@ -23,6 +27,34 @@ export const validateNewSurvey = (newSurvey: CreateSurveyData) => {
     throw new AppError(
       "BadRequest",
       "Invalid arguments for survey creation",
+      HttpStatusCode.BAD_REQUEST,
+      true
+    );
+  }
+};
+
+export const validateUpdateQuestion = (updateQuestion: unknown) => {
+  try {
+    const data = updateQuestionSchema.parse(updateQuestion);
+    return data;
+  } catch (err) {
+    throw new AppError(
+      "BadRequest",
+      "Invalid inputs for question creation",
+      HttpStatusCode.BAD_REQUEST,
+      true
+    );
+  }
+};
+
+export const validateCreateQuestion = (newQuestion: unknown) => {
+  try {
+    const data = createQuestionSchema.parse(newQuestion);
+    return data;
+  } catch (err) {
+    throw new AppError(
+      "BadRequest",
+      "Invalid inputs for question creation",
       HttpStatusCode.BAD_REQUEST,
       true
     );
@@ -79,6 +111,28 @@ export const assertPageExists = (survyePage: SurveyPage | null) => {
     );
 };
 
+export const assertQuestionExists = (question: Question | null) => {
+  if (!question)
+    throw new AppError(
+      "NotFound",
+      "Resource not found.",
+      HttpStatusCode.NOT_FOUND,
+      true
+    );
+};
+
+export const assertQuestionBelongsToSurvey = (
+  question: Question,
+  surveyId: string
+) => {
+  if (question.quizId !== surveyId)
+    throw new AppError(
+      "Unauthorized",
+      "Already finished taking of this survey collector!",
+      HttpStatusCode.UNAUTHORIZED,
+      true
+    );
+};
 export const isMultichoiceQuestionResponseValid = (
   questionResponse: {
     questionId: string;

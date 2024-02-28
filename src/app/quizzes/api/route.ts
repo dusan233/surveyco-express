@@ -139,15 +139,11 @@ router.put(
 router.post(
   "/:surveyId/question",
   ClerkExpressRequireAuth(),
-  validate(createQuestionSchema, true),
-  validateQuestionType,
   asyncHandler(quizController.createQuestionHandler)
 );
 router.put(
   "/:surveyId/question",
   ClerkExpressRequireAuth(),
-  validate(updateQuestionSchema, true),
-  validateQuestionType,
   asyncHandler(quizController.updateQuestionHandler)
 );
 // router.put(

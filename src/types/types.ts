@@ -13,6 +13,10 @@ import {
   updateSurveyCollectorStatusSchema,
 } from "../app/collectors/api/schemaValidation";
 import { SurveyRecord } from "../app/quizzes/data-access/survey-repository";
+import {
+  createQuestionSchema,
+  updateQuestionSchema,
+} from "../app/quizzes/domain/schema-validation";
 
 export type CreateSurveyData = z.infer<typeof createQuizSchema>;
 export type CreateSurveyDTO = CreateSurveyData & { userId: string };
@@ -51,6 +55,14 @@ export type SurveyDTO = SurveyRecord & {
   page_count: number;
   question_count: number;
   survey_status: SurveyStatus;
+};
+export type CreateQuestionDTO = z.infer<typeof createQuestionSchema> & {
+  userId: string;
+  surveyId: string;
+};
+
+export type UpdateQuestionDTO = z.infer<typeof updateQuestionSchema> & {
+  surveyId: string;
 };
 
 export type SaveSurveyResponseDTO = {
