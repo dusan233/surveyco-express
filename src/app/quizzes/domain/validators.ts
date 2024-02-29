@@ -16,6 +16,7 @@ import {
 import { SurveyRecord } from "../data-access/survey-repository";
 import {
   createQuestionSchema,
+  placeQuestionSchema,
   updateQuestionSchema,
 } from "./schema-validation";
 
@@ -51,6 +52,20 @@ export const validateCreateQuestion = (newQuestion: unknown) => {
   try {
     const data = createQuestionSchema.parse(newQuestion);
     return data;
+  } catch (err) {
+    throw new AppError(
+      "BadRequest",
+      "Invalid inputs for question creation",
+      HttpStatusCode.BAD_REQUEST,
+      true
+    );
+  }
+};
+
+export const validatePlaceQuestion = (data: unknown) => {
+  try {
+    const validData = placeQuestionSchema.parse(data);
+    return validData;
   } catch (err) {
     throw new AppError(
       "BadRequest",
@@ -117,6 +132,19 @@ export const assertQuestionExists = (question: Question | null) => {
       "NotFound",
       "Resource not found.",
       HttpStatusCode.NOT_FOUND,
+      true
+    );
+};
+
+export const assertQuestionBelongsToPage = (
+  question: Question,
+  pageId: string
+) => {
+  if (question.surveyPageId !== pageId)
+    throw new AppError(
+      "BadRequest",
+      "Question doesnt belong to page.",
+      HttpStatusCode.BAD_REQUEST,
       true
     );
 };

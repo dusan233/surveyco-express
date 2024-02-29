@@ -1,5 +1,25 @@
 import { z } from "zod";
-import { QuestionType } from "../../../types/types";
+import { OperationPosition, QuestionType } from "../../../types/types";
+
+export const placeQuestionSchema = z
+  .object({
+    pageId: z.string(),
+    position: z.nativeEnum(OperationPosition).optional(),
+    questionId: z.string().optional(),
+  })
+  .refine(
+    (input) => {
+      if (
+        (input.position && input.questionId) ||
+        (!input.position && !input.questionId)
+      )
+        return true;
+      return false;
+    },
+    {
+      message: "Both position and questionId should be included or omitted.",
+    }
+  );
 
 export const updateQuestionSchema = z.object({
   data: z

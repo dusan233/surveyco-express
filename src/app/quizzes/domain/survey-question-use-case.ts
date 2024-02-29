@@ -7,9 +7,14 @@ import {
   assertSurveyExists,
   assertUserCreatedSurvey,
   validateCreateQuestion,
+  validatePlaceQuestion,
   validateUpdateQuestion,
 } from "./validators";
-import { CreateQuestionDTO, UpdateQuestionDTO } from "../../../types/types";
+import {
+  CreateQuestionDTO,
+  PlaceQuestionDTO,
+  UpdateQuestionDTO,
+} from "../../../types/types";
 
 export const updateQuestion = async (data: {
   questionData: any;
@@ -57,6 +62,29 @@ export const addNewQuestion = async (data: {
   };
 
   return await questionRepository.addQuestion(newQuestionData);
+};
+
+export const copyQuestion = async (data: {
+  copyQuestionData: unknown;
+  surveyId: string;
+  userId: string;
+  copyQuestionId: string;
+}) => {
+  const validatedData = validatePlaceQuestion(data.copyQuestionData);
+
+  const survey = await surveyRepository.getSurveyById(data.surveyId);
+  assertSurveyExists(survey);
+  assertUserCreatedSurvey(survey!, data.userId);
+
+  const copyQuestionData: PlaceQuestionDTO = {
+    targetQuestionId: validatedData.questionId,
+    targetPageId: validatedData.pageId,
+    position: validatedData.position,
+    copyQuestionId: data.copyQuestionId,
+    surveyId: data.surveyId,
+  };
+
+  return await questionRepository.copyQuestion(copyQuestionData);
 };
 
 export const deleteQuestion = async (data: {

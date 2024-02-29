@@ -2,6 +2,8 @@ import { Prisma } from "@prisma/client";
 import prisma from "../../../prismaClient";
 import {
   CreateQuestionDTO,
+  OperationPosition,
+  PlaceQuestionDTO,
   QuestionType,
   UpdateQuestionDTO,
 } from "../../../types/types";
@@ -9,6 +11,9 @@ import { assertMaxQuestionsPerPageNotExceeded } from "../domain/survey-page-vali
 import {
   assertPageBelongsToSurvey,
   assertPageExists,
+  assertQuestionBelongsToPage,
+  assertQuestionBelongsToSurvey,
+  assertQuestionExists,
 } from "../domain/validators";
 
 export const getQuestionsByPageId = async (
@@ -131,6 +136,141 @@ export const updateQuestion = async (updateQuestion: UpdateQuestionDTO) => {
     },
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
   );
+};
+
+export const copyQuestion = async (copyQuestionData: PlaceQuestionDTO) => {
+  return await prisma.$transaction(async (tx) => {
+    const targetSurveyPagePromise = tx.surveyPage.findUnique({
+      where: { id: copyQuestionData.targetPageId },
+      include: {
+        _count: {
+          select: { questions: true },
+        },
+      },
+    });
+    const copyQuestionPromise = tx.question.findUnique({
+      where: { id: copyQuestionData.copyQuestionId },
+      include: { options: true },
+    });
+
+    const [targetPage, copyQuestion] = await Promise.all([
+      targetSurveyPagePromise,
+      copyQuestionPromise,
+    ]);
+
+    assertPageExists(targetPage);
+    assertPageBelongsToSurvey(targetPage!, copyQuestionData.surveyId);
+    assertQuestionExists(copyQuestion);
+    assertQuestionBelongsToSurvey(copyQuestion!, copyQuestionData.surveyId);
+    assertMaxQuestionsPerPageNotExceeded(targetPage!._count.questions);
+
+    let newQuestionNumber;
+
+    if (targetPage!._count.questions !== 0) {
+      if (copyQuestionData.targetQuestionId) {
+        const targetQuestion = await tx.question.findUnique({
+          where: {
+            id: copyQuestionData.targetQuestionId,
+            surveyPageId: copyQuestionData.targetPageId,
+          },
+        });
+        assertQuestionExists(targetQuestion);
+
+        newQuestionNumber =
+          copyQuestionData.position === OperationPosition.after
+            ? targetQuestion!.number + 1
+            : targetQuestion!.number;
+      } else {
+        const targetPageLastQuestion = await tx.question.findFirst({
+          where: { surveyPageId: copyQuestionData.targetPageId },
+          orderBy: { number: "desc" },
+        });
+
+        assertQuestionExists(targetPageLastQuestion);
+
+        newQuestionNumber = targetPageLastQuestion!.number + 1;
+      }
+    } else {
+      const pagesBeforeTargetPageWithQuestionCount =
+        await tx.surveyPage.findMany({
+          where: {
+            surveyId: copyQuestionData.surveyId,
+            number: { lt: targetPage!.number },
+          },
+          include: {
+            _count: {
+              select: {
+                questions: true,
+              },
+            },
+          },
+          orderBy: {
+            number: "desc",
+          },
+        });
+      const firstPageBeforeWithQuestionsId =
+        pagesBeforeTargetPageWithQuestionCount.find(
+          (page) => page._count.questions > 0
+        )?.id;
+      if (firstPageBeforeWithQuestionsId) {
+        const firstPageWithQuestionsLastQuestion = await tx.question.findFirst({
+          where: { surveyPage: { id: firstPageBeforeWithQuestionsId } },
+          orderBy: { number: "desc" },
+        });
+        newQuestionNumber = firstPageWithQuestionsLastQuestion!.number + 1;
+      } else {
+        newQuestionNumber = 1;
+      }
+    }
+
+    await tx.question.updateMany({
+      where: {
+        number: { gte: newQuestionNumber },
+        quiz: { id: copyQuestionData.surveyId },
+      },
+      data: {
+        number: {
+          increment: 1,
+        },
+      },
+    });
+
+    const newQuestion = await tx.question.create({
+      data: {
+        description: copyQuestion!.description,
+        type: copyQuestion!.type,
+        required: copyQuestion!.required,
+        description_image: copyQuestion!.description_image,
+        quiz: {
+          connect: {
+            id: copyQuestionData.surveyId,
+          },
+        },
+        surveyPage: { connect: { id: targetPage!.id } },
+        number: newQuestionNumber,
+        randomize:
+          copyQuestion!.type !== QuestionType.textbox
+            ? copyQuestion!.randomize
+            : undefined,
+        options:
+          copyQuestion!.type !== QuestionType.textbox
+            ? {
+                create: copyQuestion!.options.map((option) => ({
+                  description: option.description,
+                  description_image: option.description_image,
+                })),
+              }
+            : undefined,
+      },
+    });
+
+    await tx.quiz.update({
+      where: { id: copyQuestionData.surveyId },
+      data: { updated_at: newQuestion.created_at },
+    });
+
+    return newQuestion;
+  });
 };
 
 export const addQuestion = async (createQuestion: CreateQuestionDTO) => {

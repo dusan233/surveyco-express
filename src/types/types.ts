@@ -60,6 +60,13 @@ export type CreateQuestionDTO = z.infer<typeof createQuestionSchema> & {
   userId: string;
   surveyId: string;
 };
+export type PlaceQuestionDTO = {
+  targetQuestionId?: string;
+  position?: OperationPosition;
+  targetPageId: string;
+  copyQuestionId: string;
+  surveyId: string;
+};
 
 export type UpdateQuestionDTO = z.infer<typeof updateQuestionSchema> & {
   surveyId: string;
