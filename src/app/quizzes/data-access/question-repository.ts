@@ -138,6 +138,222 @@ export const updateQuestion = async (updateQuestion: UpdateQuestionDTO) => {
   );
 };
 
+export const moveQuestion = async (moveQuestionData: PlaceQuestionDTO) => {
+  return await prisma.$transaction(async (tx) => {
+    const targetSurveyPagePromise = tx.surveyPage.findUnique({
+      where: { id: moveQuestionData.targetPageId },
+      include: {
+        _count: {
+          select: { questions: true },
+        },
+      },
+    });
+    const moveQuestionPromise = tx.question.findUnique({
+      where: { id: moveQuestionData.sourceQuestionId },
+      include: { options: true },
+    });
+
+    const [targetPage, moveQuestion] = await Promise.all([
+      targetSurveyPagePromise,
+      moveQuestionPromise,
+    ]);
+
+    assertPageExists(targetPage);
+    assertPageBelongsToSurvey(targetPage!, moveQuestionData.surveyId);
+    assertQuestionExists(moveQuestion);
+    assertQuestionBelongsToSurvey(moveQuestion!, moveQuestionData.surveyId);
+    assertMaxQuestionsPerPageNotExceeded(targetPage!._count.questions);
+
+    let movedQuestionNewNumber;
+
+    if (targetPage!._count.questions !== 0) {
+      if (moveQuestionData.targetQuestionId) {
+        const targetQuestion = await tx.question.findUnique({
+          where: {
+            id: moveQuestionData.targetQuestionId,
+            surveyPageId: moveQuestionData.targetPageId,
+          },
+        });
+        assertQuestionExists(targetQuestion);
+
+        movedQuestionNewNumber =
+          moveQuestionData.position === OperationPosition.after
+            ? targetQuestion!.number
+            : targetQuestion!.number - 1;
+
+        if (targetQuestion!.number > moveQuestion!.number) {
+          await tx.question.updateMany({
+            where: {
+              quiz: { id: moveQuestionData.surveyId },
+              number: {
+                gt: moveQuestion!.number,
+                lte: movedQuestionNewNumber,
+              },
+            },
+            data: {
+              number: {
+                decrement: 1,
+              },
+            },
+          });
+        } else {
+          movedQuestionNewNumber =
+            moveQuestionData.position === OperationPosition.after
+              ? targetQuestion!.number + 1
+              : targetQuestion!.number;
+          await tx.question.updateMany({
+            where: {
+              quiz: { id: moveQuestionData.surveyId },
+              number: {
+                gte: movedQuestionNewNumber,
+                lt: moveQuestion!.number,
+              },
+            },
+            data: {
+              number: {
+                increment: 1,
+              },
+            },
+          });
+        }
+      } else {
+        const targetPageLastQuestion = await tx.question.findFirst({
+          where: { surveyPageId: moveQuestionData.targetPageId },
+          orderBy: { number: "desc" },
+        });
+
+        if (targetPageLastQuestion!.number > moveQuestion!.number) {
+          movedQuestionNewNumber =
+            moveQuestionData.position === OperationPosition.after
+              ? targetPageLastQuestion!.number
+              : targetPageLastQuestion!.number - 1;
+
+          await tx.question.updateMany({
+            where: {
+              quiz: { id: moveQuestionData.surveyId },
+              number: {
+                gt: moveQuestion!.number,
+                lte: movedQuestionNewNumber,
+              },
+            },
+            data: {
+              number: {
+                decrement: 1,
+              },
+            },
+          });
+        } else {
+          movedQuestionNewNumber =
+            moveQuestionData.position === OperationPosition.after
+              ? targetPageLastQuestion!.number + 1
+              : targetPageLastQuestion!.number;
+          await tx.question.updateMany({
+            where: {
+              quiz: { id: moveQuestionData.surveyId },
+              number: {
+                gte: movedQuestionNewNumber,
+                lt: moveQuestion!.number,
+              },
+            },
+            data: {
+              number: {
+                increment: 1,
+              },
+            },
+          });
+        }
+      }
+    } else {
+      const pagesBeforeTargetPageWithQuestionCount =
+        await tx.surveyPage.findMany({
+          where: {
+            surveyId: moveQuestionData.surveyId,
+            number: { lt: targetPage!.number },
+          },
+          include: {
+            _count: {
+              select: {
+                questions: true,
+              },
+            },
+          },
+          orderBy: {
+            number: "desc",
+          },
+        });
+      const firstPageBeforeWithQuestionsId =
+        pagesBeforeTargetPageWithQuestionCount.find(
+          (page) => page._count.questions > 0
+        )?.id;
+
+      // this means we are moving question from 7 to 4 example.
+      if (!firstPageBeforeWithQuestionsId) movedQuestionNewNumber = 1;
+      if (firstPageBeforeWithQuestionsId) {
+        const firstPageWithQuestionsLastQuestion = await tx.question.findFirst({
+          where: { surveyPage: { id: firstPageBeforeWithQuestionsId } },
+          orderBy: { number: "desc" },
+        });
+
+        if (moveQuestion!.number > firstPageWithQuestionsLastQuestion!.number) {
+          movedQuestionNewNumber =
+            firstPageWithQuestionsLastQuestion!.number + 1;
+          await tx.question.updateMany({
+            where: {
+              quiz: { id: moveQuestionData.surveyId },
+              number: {
+                gte: movedQuestionNewNumber,
+                lt: moveQuestion!.number,
+              },
+            },
+            data: {
+              number: {
+                increment: 1,
+              },
+            },
+          });
+        } else {
+          if (moveQuestion!.id === firstPageWithQuestionsLastQuestion!.id) {
+            movedQuestionNewNumber = 1;
+          } else {
+            movedQuestionNewNumber = firstPageWithQuestionsLastQuestion!.number;
+            await tx.question.updateMany({
+              where: {
+                quiz: { id: moveQuestionData.surveyId },
+                number: {
+                  gt: moveQuestion!.number,
+                  lte: movedQuestionNewNumber,
+                },
+              },
+              data: {
+                number: {
+                  decrement: 1,
+                },
+              },
+            });
+          }
+        }
+      }
+    }
+
+    const movedQuestion = await tx.question.update({
+      where: { id: moveQuestionData.sourceQuestionId },
+      data: {
+        number: movedQuestionNewNumber,
+        surveyPage: {
+          connect: { id: targetPage!.id },
+        },
+      },
+    });
+
+    await tx.quiz.update({
+      where: { id: moveQuestionData.surveyId },
+      data: { updated_at: movedQuestion.updated_at },
+    });
+
+    return movedQuestion;
+  });
+};
+
 export const copyQuestion = async (copyQuestionData: PlaceQuestionDTO) => {
   return await prisma.$transaction(
     async (tx) => {
@@ -150,7 +366,7 @@ export const copyQuestion = async (copyQuestionData: PlaceQuestionDTO) => {
         },
       });
       const copyQuestionPromise = tx.question.findUnique({
-        where: { id: copyQuestionData.copyQuestionId },
+        where: { id: copyQuestionData.sourceQuestionId },
         include: { options: true },
       });
 

@@ -166,7 +166,6 @@ router.post(
 router.put(
   "/:surveyId/question/:questionId/move",
   ClerkExpressRequireAuth(),
-  validate(placeQuestionSchema),
   asyncHandler(quizController.moveQuestionHandler)
 );
 

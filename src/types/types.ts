@@ -64,7 +64,7 @@ export type PlaceQuestionDTO = {
   targetQuestionId?: string;
   position?: OperationPosition;
   targetPageId: string;
-  copyQuestionId: string;
+  sourceQuestionId: string;
   surveyId: string;
 };
 

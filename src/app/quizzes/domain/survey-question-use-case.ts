@@ -64,6 +64,29 @@ export const addNewQuestion = async (data: {
   return await questionRepository.addQuestion(newQuestionData);
 };
 
+export const moveQuestion = async (data: {
+  moveQuestionData: unknown;
+  surveyId: string;
+  userId: string;
+  moveQuestionId: string;
+}) => {
+  const validatedData = validatePlaceQuestion(data.moveQuestionData);
+
+  const survey = await surveyRepository.getSurveyById(data.surveyId);
+  assertSurveyExists(survey);
+  assertUserCreatedSurvey(survey!, data.userId);
+
+  const moveQuestionData: PlaceQuestionDTO = {
+    targetQuestionId: validatedData.questionId,
+    targetPageId: validatedData.pageId,
+    position: validatedData.position,
+    sourceQuestionId: data.moveQuestionId,
+    surveyId: data.surveyId,
+  };
+
+  return await questionRepository.moveQuestion(moveQuestionData);
+};
+
 export const copyQuestion = async (data: {
   copyQuestionData: unknown;
   surveyId: string;
@@ -80,7 +103,7 @@ export const copyQuestion = async (data: {
     targetQuestionId: validatedData.questionId,
     targetPageId: validatedData.pageId,
     position: validatedData.position,
-    copyQuestionId: data.copyQuestionId,
+    sourceQuestionId: data.copyQuestionId,
     surveyId: data.surveyId,
   };
 
