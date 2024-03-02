@@ -697,21 +697,8 @@ const deleteSurveyPageHandler = async (
   const surveyId = req.params.surveyId;
   const pageId = req.params.pageId;
   const userId = req.auth.userId;
-  const survey = await getSurvey(surveyId);
 
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  await deleteSurveyPage(surveyId, pageId);
+  await surveyPageUseCase.deleteSurveyPage({ pageId, surveyId, userId });
   return res.sendStatus(HttpStatusCode.NO_CONTENT);
 };
 
