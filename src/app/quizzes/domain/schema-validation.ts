@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { OperationPosition, QuestionType } from "../../../types/types";
 
+export const placePageSchema = z.object({
+  position: z.nativeEnum(OperationPosition),
+  pageId: z.string(),
+});
+
 export const placeQuestionSchema = z
   .object({
     pageId: z.string(),

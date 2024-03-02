@@ -68,6 +68,13 @@ export type PlaceQuestionDTO = {
   surveyId: string;
 };
 
+export type PlacePageDTO = {
+  targetPageId: string;
+  position: OperationPosition;
+  sourcePageId: string;
+  surveyId: string;
+};
+
 export type UpdateQuestionDTO = z.infer<typeof updateQuestionSchema> & {
   surveyId: string;
 };

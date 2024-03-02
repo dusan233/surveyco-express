@@ -16,6 +16,7 @@ import {
 import { SurveyRecord } from "../data-access/survey-repository";
 import {
   createQuestionSchema,
+  placePageSchema,
   placeQuestionSchema,
   updateQuestionSchema,
 } from "./schema-validation";
@@ -56,6 +57,20 @@ export const validateCreateQuestion = (newQuestion: unknown) => {
     throw new AppError(
       "BadRequest",
       "Invalid inputs for question creation",
+      HttpStatusCode.BAD_REQUEST,
+      true
+    );
+  }
+};
+
+export const validatePlacePage = (data: unknown) => {
+  try {
+    const validData = placePageSchema.parse(data);
+    return validData;
+  } catch (err) {
+    throw new AppError(
+      "BadRequest",
+      "Invalid inputs for page placement.",
       HttpStatusCode.BAD_REQUEST,
       true
     );

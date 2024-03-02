@@ -1,6 +1,11 @@
 import { Prisma } from "@prisma/client";
 import prisma from "../../../prismaClient";
 import { assertPageExists } from "../domain/validators";
+import {
+  OperationPosition,
+  PlacePageDTO,
+  QuestionType,
+} from "../../../types/types";
 
 export const getSurveyPages = async (surveyId: string) => {
   const pages = await prisma.surveyPage.findMany({
@@ -13,6 +18,140 @@ export const getSurveyPages = async (surveyId: string) => {
 
 export const getSurveyPageCount = async (surveyId: string) => {
   return await prisma.surveyPage.count({ where: { surveyId } });
+};
+
+export const copySurveyPage = async (copyPageData: PlacePageDTO) => {
+  return await prisma.$transaction(
+    async (tx) => {
+      const sourcePagePromise = tx.surveyPage.findUnique({
+        where: {
+          id: copyPageData.sourcePageId,
+          surveyId: copyPageData.surveyId,
+        },
+        include: {
+          questions: {
+            include: {
+              options: true,
+            },
+            orderBy: { number: "asc" },
+          },
+        },
+      });
+      const targetPagePromise = tx.surveyPage.findUnique({
+        where: {
+          id: copyPageData.targetPageId,
+          surveyId: copyPageData.surveyId,
+        },
+      });
+      const [sourcePage, targetPage] = await Promise.all([
+        sourcePagePromise,
+        targetPagePromise,
+      ]);
+      assertPageExists(sourcePage);
+      assertPageExists(targetPage);
+
+      const newPageNumber =
+        copyPageData.position === OperationPosition.after
+          ? targetPage!.number + 1
+          : targetPage!.number;
+
+      const pagesBeforeNewPageWithQuestionCount = await tx.surveyPage.findMany({
+        where: {
+          survey: { id: copyPageData.surveyId },
+          number: { lt: newPageNumber },
+        },
+        include: {
+          _count: {
+            select: {
+              questions: true,
+            },
+          },
+        },
+        orderBy: {
+          number: "desc",
+        },
+      });
+
+      const firstPageBeforeWithQuestionsId =
+        pagesBeforeNewPageWithQuestionCount.find(
+          (page) => page._count.questions > 0
+        )?.id;
+
+      const questionBeforeFirstNewQuestion = firstPageBeforeWithQuestionsId
+        ? await tx.question.findFirst({
+            where: { surveyPage: { id: firstPageBeforeWithQuestionsId } },
+            orderBy: { number: "desc" },
+          })
+        : undefined;
+
+      await tx.surveyPage.updateMany({
+        where: { number: { gte: newPageNumber } },
+        data: {
+          number: { increment: 1 },
+        },
+      });
+
+      await tx.question.updateMany({
+        where: {
+          number: {
+            gt: questionBeforeFirstNewQuestion
+              ? questionBeforeFirstNewQuestion.number
+              : 0,
+          },
+        },
+        data: {
+          number: {
+            increment: sourcePage!.questions.length,
+          },
+        },
+      });
+
+      const createdPage = await tx.surveyPage.create({
+        data: {
+          number: newPageNumber,
+          survey: {
+            connect: {
+              id: sourcePage!.surveyId,
+            },
+          },
+          questions: {
+            create: sourcePage!.questions.map((q, index) => ({
+              description: q.description,
+              type: q.type,
+              description_image: q.description_image,
+              required: q.required,
+              quiz: { connect: { id: q.quizId } },
+              number:
+                (questionBeforeFirstNewQuestion
+                  ? questionBeforeFirstNewQuestion!.number
+                  : 0) +
+                1 +
+                index,
+              randomize:
+                q.type !== QuestionType.textbox ? q.randomize : undefined,
+              options:
+                q.type !== QuestionType.textbox
+                  ? {
+                      create: q.options.map((option) => ({
+                        description: option.description,
+                        description_image: option.description_image,
+                      })),
+                    }
+                  : undefined,
+            })),
+          },
+        },
+      });
+
+      await tx.quiz.update({
+        where: { id: createdPage.surveyId },
+        data: { updated_at: createdPage.created_at },
+      });
+
+      return createdPage;
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+  );
 };
 
 export const deleteSurveyPage = async (pageId: string, surveyId: string) => {

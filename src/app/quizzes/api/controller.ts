@@ -703,33 +703,19 @@ const deleteSurveyPageHandler = async (
 };
 
 const copySurveyPageHandler = async (
-  req: Request<SurveyPageParams, any, PlacePageReqBody>,
+  req: Request<SurveyPageParams>,
   res: Response
 ) => {
-  console.log("nikad ovde");
   const surveyId = req.params.surveyId;
   const sourcePageId = req.params.pageId;
   const userId = req.auth.userId;
-  const survey = await getSurvey(surveyId);
 
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  const createdPage = await copySurveyPage(
+  const createdPage = await surveyPageUseCase.copySurveyPage({
+    copyPageData: req.body,
     surveyId,
-    sourcePageId,
-    req.body.position,
-    req.body.pageId
-  );
+    userId,
+    copyPageId: sourcePageId,
+  });
 
   return res.status(HttpStatusCode.CREATED).json(createdPage);
 };

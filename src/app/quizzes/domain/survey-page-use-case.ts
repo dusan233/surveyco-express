@@ -1,9 +1,13 @@
 import { AppError } from "../../../lib/error-handling";
-import { HttpStatusCode } from "../../../types/types";
+import { HttpStatusCode, PlacePageDTO } from "../../../types/types";
 import * as surveyPageRepository from "../data-access/survey-page-repository";
 import * as surveyRepository from "../data-access/survey-repository";
 import { assertMaxPagesNotExceeded } from "./survey-page-validators";
-import { assertSurveyExists, assertUserCreatedSurvey } from "./validators";
+import {
+  assertSurveyExists,
+  assertUserCreatedSurvey,
+  validatePlacePage,
+} from "./validators";
 
 export const createSurveyPage = async (surveyId: string, userId: string) => {
   const [survey, pageCount] = await Promise.all([
@@ -16,6 +20,29 @@ export const createSurveyPage = async (surveyId: string, userId: string) => {
   assertMaxPagesNotExceeded(pageCount);
 
   return await surveyPageRepository.createSurveyPage(surveyId);
+};
+
+export const copySurveyPage = async (data: {
+  copyPageData: unknown;
+  surveyId: string;
+  userId: string;
+  copyPageId: string;
+}) => {
+  const validatedData = validatePlacePage(data.copyPageData);
+
+  const survey = await surveyRepository.getSurveyById(data.surveyId);
+
+  assertSurveyExists(survey);
+  assertUserCreatedSurvey(survey!, data.userId);
+
+  const copyPageData: PlacePageDTO = {
+    surveyId: data.surveyId,
+    sourcePageId: data.copyPageId,
+    targetPageId: validatedData.pageId,
+    position: validatedData.position,
+  };
+
+  return await surveyPageRepository.copySurveyPage(copyPageData);
 };
 
 export const deleteSurveyPage = async (data: {

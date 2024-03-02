@@ -60,7 +60,6 @@ router.delete(
 router.post(
   "/:surveyId/page/:pageId/copy",
   ClerkExpressRequireAuth(),
-  validate(placePageSchema),
   asyncHandler(quizController.copySurveyPageHandler)
 );
 router.put(
