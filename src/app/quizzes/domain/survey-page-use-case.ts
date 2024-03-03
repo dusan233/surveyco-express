@@ -9,6 +9,14 @@ import {
   validatePlacePage,
 } from "./validators";
 
+export const getSurveyPage = async (pageId: string) => {
+  return await surveyPageRepository.getSurveyPageById(pageId);
+};
+
+export const getSurveyPages = async (surveyId: string) => {
+  return await surveyPageRepository.getSurveyPages(surveyId);
+};
+
 export const createSurveyPage = async (surveyId: string, userId: string) => {
   const [survey, pageCount] = await Promise.all([
     surveyRepository.getSurveyById(surveyId),

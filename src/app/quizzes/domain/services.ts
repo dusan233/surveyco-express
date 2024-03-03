@@ -316,7 +316,7 @@ export const getQuestionsResult = async (
 };
 
 export const getPageQuestions = async (surveyId: string, pageId: string) => {
-  return await questionRepository.getQuestionsByPageId(surveyId, pageId);
+  return await questionRepository.getQuestionsByPageId(pageId);
 };
 
 export const getQuestions = async (
@@ -899,10 +899,7 @@ export const getSurveyResponseData = async (
   surveyId: string,
   pageId: string
 ) => {
-  const questions = await questionRepository.getQuestionsByPageId(
-    surveyId,
-    pageId
-  );
+  const questions = await questionRepository.getQuestionsByPageId(pageId);
   const questionIds = questions.map((q) => q.id);
   const questionResponses =
     await questionResponseRepository.getQuestionResponsesForSurveyResponse(

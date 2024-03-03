@@ -1,4 +1,3 @@
-import * as surveyService from "../domain/services";
 import * as surveyRepository from "../data-access/survey-repository";
 import * as questionRepository from "../data-access/question-repository";
 import {
@@ -15,6 +14,10 @@ import {
   PlaceQuestionDTO,
   UpdateQuestionDTO,
 } from "../../../types/types";
+
+export const getQuestions = async (pageId: string) => {
+  return await questionRepository.getQuestionsByPageId(pageId);
+};
 
 export const updateQuestion = async (data: {
   questionData: any;

@@ -69,6 +69,7 @@ import {
 } from "../../../lib/utils";
 import * as surveyService from "../domain/services";
 import * as collectorService from "../../collectors/domain/services";
+import * as surveyUseCase from "../domain/survey-use-case";
 import * as surveyPageUseCase from "../domain/survey-page-use-case";
 import * as surveyQuestionUseCase from "../domain/survey-question-use-case";
 import {
@@ -147,10 +148,10 @@ const getSurveyPagesHandler = async (
 ) => {
   const surveyId = req.params.surveyId;
 
-  const survey = await surveyService.getSurveyById(surveyId);
+  const survey = await surveyUseCase.getSurvey(surveyId);
   assertSurveyExists(survey);
 
-  const surveyPages = await surveyService.getSurveyPages(surveyId);
+  const surveyPages = await surveyPageUseCase.getSurveyPages(surveyId);
 
   return res.status(HttpStatusCode.OK).json(surveyPages);
 };
@@ -672,18 +673,15 @@ const getSurveyQuestionsHandler = async (
     );
 
   const [survey, page] = await Promise.all([
-    surveyService.getSurveyById(surveyId),
-    surveyService.getSurveyPage(req.query.pageId),
+    surveyUseCase.getSurvey(surveyId),
+    surveyPageUseCase.getSurveyPage(req.query.pageId),
   ]);
 
   assertSurveyExists(survey);
   assertPageExists(page);
   assertPageBelongsToSurvey(page!, survey!.id);
 
-  const questions = await surveyService.getPageQuestions(
-    surveyId,
-    req.query.pageId
-  );
+  const questions = await surveyQuestionUseCase.getQuestions(req.query.pageId);
 
   return res
     .status(HttpStatusCode.OK)

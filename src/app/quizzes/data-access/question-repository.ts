@@ -11,18 +11,13 @@ import { assertMaxQuestionsPerPageNotExceeded } from "../domain/survey-page-vali
 import {
   assertPageBelongsToSurvey,
   assertPageExists,
-  assertQuestionBelongsToPage,
   assertQuestionBelongsToSurvey,
   assertQuestionExists,
 } from "../domain/validators";
 
-export const getQuestionsByPageId = async (
-  surveyId: string,
-  pageId: string
-) => {
+export const getQuestionsByPageId = async (pageId: string) => {
   const questions = await prisma.question.findMany({
     where: {
-      quizId: surveyId,
       surveyPage: { id: pageId },
     },
     orderBy: { number: "asc" },
