@@ -20,6 +20,152 @@ export const getSurveyPageCount = async (surveyId: string) => {
   return await prisma.surveyPage.count({ where: { surveyId } });
 };
 
+export const moveSurveyPage = async (movePageData: PlacePageDTO) => {
+  return await prisma.$transaction(
+    async (tx) => {
+      const sourcePagePromise = tx.surveyPage.findUnique({
+        where: {
+          id: movePageData.sourcePageId,
+          surveyId: movePageData.surveyId,
+        },
+        include: {
+          questions: {
+            include: {
+              options: true,
+            },
+            orderBy: { number: "asc" },
+          },
+        },
+      });
+      const targetPagePromise = tx.surveyPage.findUnique({
+        where: {
+          id: movePageData.targetPageId,
+          surveyId: movePageData.surveyId,
+        },
+      });
+      const [sourcePage, targetPage] = await Promise.all([
+        sourcePagePromise,
+        targetPagePromise,
+      ]);
+      assertPageExists(sourcePage);
+      assertPageExists(targetPage);
+
+      const sourcePageNumIsBigger = sourcePage!.number > targetPage!.number;
+      const updatedSourcePageNumber = sourcePageNumIsBigger
+        ? movePageData.position === OperationPosition.after
+          ? targetPage!.number + 1
+          : targetPage!.number
+        : movePageData.position === OperationPosition.after
+        ? targetPage!.number
+        : targetPage!.number - 1;
+
+      if (sourcePageNumIsBigger) {
+        await tx.surveyPage.updateMany({
+          where: {
+            number:
+              movePageData.position === OperationPosition.after
+                ? {
+                    gt: targetPage!.number,
+                    lt: sourcePage!.number,
+                  }
+                : {
+                    gte: targetPage!.number,
+                    lt: sourcePage!.number,
+                  },
+          },
+          data: {
+            number: { increment: 1 },
+          },
+        });
+        const pagesBeforeUpdatedPageWithQuestionCount =
+          await tx.surveyPage.findMany({
+            where: {
+              survey: { id: movePageData.surveyId },
+              number: { lt: updatedSourcePageNumber },
+            },
+            include: {
+              _count: {
+                select: {
+                  questions: true,
+                },
+              },
+            },
+            orderBy: {
+              number: "desc",
+            },
+          });
+        const firstPageWithQuestionsBeforeTargetPageId =
+          pagesBeforeUpdatedPageWithQuestionCount.find(
+            (page) => page._count.questions > 0
+          )?.id;
+        const startingPointQuestion = firstPageWithQuestionsBeforeTargetPageId
+          ? await tx.question.findFirst({
+              where: {
+                surveyPage: { id: firstPageWithQuestionsBeforeTargetPageId },
+              },
+              orderBy: { number: "desc" },
+            })
+          : undefined;
+
+        await tx.question.updateMany({
+          where: {
+            quizId: movePageData.surveyId,
+            number: {
+              gt: startingPointQuestion ? startingPointQuestion.number : 0,
+              lt: sourcePage!.questions[0].number,
+            },
+          },
+          data: {
+            number: { increment: sourcePage!.questions.length },
+          },
+        });
+        await Promise.all(
+          sourcePage!.questions.map((q, index) =>
+            tx.question.update({
+              where: { id: q.id },
+              data: {
+                number: startingPointQuestion
+                  ? startingPointQuestion.number + index + 1
+                  : index + 1,
+              },
+            })
+          )
+        );
+      } else {
+        await tx.surveyPage.updateMany({
+          where: {
+            number: {
+              gt: sourcePage!.number,
+              lte:
+                movePageData.position === OperationPosition.after
+                  ? targetPage!.number
+                  : targetPage!.number - 1,
+            },
+          },
+          data: {
+            number: { decrement: 1 },
+          },
+        });
+      }
+
+      const updatedPage = await tx.surveyPage.update({
+        where: { id: sourcePage!.id },
+        data: {
+          number: updatedSourcePageNumber,
+        },
+      });
+
+      await tx.quiz.update({
+        where: { id: movePageData.surveyId },
+        data: { updated_at: updatedPage.updated_at },
+      });
+
+      return updatedPage;
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+  );
+};
+
 export const copySurveyPage = async (copyPageData: PlacePageDTO) => {
   return await prisma.$transaction(
     async (tx) => {

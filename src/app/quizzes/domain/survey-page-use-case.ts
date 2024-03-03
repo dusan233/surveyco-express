@@ -22,6 +22,27 @@ export const createSurveyPage = async (surveyId: string, userId: string) => {
   return await surveyPageRepository.createSurveyPage(surveyId);
 };
 
+export const moveSurveyPage = async (data: {
+  movePageData: unknown;
+  surveyId: string;
+  userId: string;
+  movePageId: string;
+}) => {
+  const validatedData = validatePlacePage(data.movePageData);
+
+  const survey = await surveyRepository.getSurveyById(data.surveyId);
+
+  assertSurveyExists(survey);
+  assertUserCreatedSurvey(survey!, data.userId);
+
+  const movePageData: PlacePageDTO = {
+    surveyId: data.surveyId,
+    sourcePageId: data.movePageId,
+    targetPageId: validatedData.pageId,
+    position: validatedData.position,
+  };
+};
+
 export const copySurveyPage = async (data: {
   copyPageData: unknown;
   surveyId: string;
