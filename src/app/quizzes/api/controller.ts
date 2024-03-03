@@ -721,33 +721,19 @@ const copySurveyPageHandler = async (
 };
 
 const moveSurveyPageHandler = async (
-  req: Request<SurveyPageParams, any, PlacePageReqBody>,
+  req: Request<SurveyPageParams>,
   res: Response
 ) => {
-  console.log("kurac");
   const surveyId = req.params.surveyId;
   const sourcePageId = req.params.pageId;
   const userId = req.auth.userId;
-  const survey = await getSurvey(surveyId);
 
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  const movedPage = await moveSurveyPage(
+  const movedPage = await surveyPageUseCase.moveSurveyPage({
+    movePageData: req.body,
     surveyId,
-    sourcePageId,
-    req.body.position,
-    req.body.pageId
-  );
+    userId,
+    movePageId: sourcePageId,
+  });
 
   return res.status(HttpStatusCode.OK).json(movedPage);
 };

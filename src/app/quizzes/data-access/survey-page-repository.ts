@@ -43,9 +43,13 @@ export const moveSurveyPage = async (movePageData: PlacePageDTO) => {
           surveyId: movePageData.surveyId,
         },
       });
-      const [sourcePage, targetPage] = await Promise.all([
+      const surveyQuestionCountPromise = await tx.question.count({
+        where: { quizId: movePageData.surveyId },
+      });
+      const [sourcePage, targetPage, surveyQuestionCount] = await Promise.all([
         sourcePagePromise,
         targetPagePromise,
+        surveyQuestionCountPromise,
       ]);
       assertPageExists(sourcePage);
       assertPageExists(targetPage);
@@ -55,9 +59,11 @@ export const moveSurveyPage = async (movePageData: PlacePageDTO) => {
         ? movePageData.position === OperationPosition.after
           ? targetPage!.number + 1
           : targetPage!.number
-        : movePageData.position === OperationPosition.after
-        ? targetPage!.number
-        : targetPage!.number - 1;
+        : sourcePage!.number < targetPage!.number
+        ? movePageData.position === OperationPosition.after
+          ? targetPage!.number
+          : targetPage!.number - 1
+        : sourcePage!.number;
 
       if (sourcePageNumIsBigger) {
         await tx.surveyPage.updateMany({
@@ -131,7 +137,7 @@ export const moveSurveyPage = async (movePageData: PlacePageDTO) => {
             })
           )
         );
-      } else {
+      } else if (sourcePage!.number < targetPage!.number) {
         await tx.surveyPage.updateMany({
           where: {
             number: {
@@ -146,6 +152,68 @@ export const moveSurveyPage = async (movePageData: PlacePageDTO) => {
             number: { decrement: 1 },
           },
         });
+        const pagesAfterUpdatedPageWithQuestionCount =
+          await tx.surveyPage.findMany({
+            where: {
+              survey: { id: movePageData.surveyId },
+              number: { gt: updatedSourcePageNumber },
+            },
+            include: {
+              _count: {
+                select: {
+                  questions: true,
+                },
+              },
+            },
+            orderBy: {
+              number: "asc",
+            },
+          });
+        const firstPageWithQuestionsAfterTargetPageId =
+          pagesAfterUpdatedPageWithQuestionCount.find(
+            (page) => page._count.questions > 0
+          )?.id;
+        const startingPointQuestion = firstPageWithQuestionsAfterTargetPageId
+          ? await tx.question.findFirst({
+              where: {
+                surveyPage: { id: firstPageWithQuestionsAfterTargetPageId },
+              },
+              orderBy: { number: "asc" },
+            })
+          : undefined;
+
+        await tx.question.updateMany({
+          where: {
+            quizId: movePageData.surveyId,
+            number: {
+              gt: sourcePage!.questions[sourcePage!.questions.length - 1]
+                .number,
+              lt: startingPointQuestion
+                ? startingPointQuestion.number
+                : surveyQuestionCount + 1,
+            },
+          },
+          data: {
+            number: { decrement: sourcePage!.questions.length },
+          },
+        });
+        await Promise.all(
+          sourcePage!.questions.map((q, index) =>
+            tx.question.update({
+              where: { id: q.id },
+              data: {
+                number: startingPointQuestion
+                  ? startingPointQuestion.number -
+                    sourcePage!.questions.length +
+                    index
+                  : surveyQuestionCount +
+                    1 -
+                    sourcePage!.questions.length +
+                    index,
+              },
+            })
+          )
+        );
       }
 
       const updatedPage = await tx.surveyPage.update({

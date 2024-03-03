@@ -41,6 +41,8 @@ export const moveSurveyPage = async (data: {
     targetPageId: validatedData.pageId,
     position: validatedData.position,
   };
+
+  return await surveyPageRepository.moveSurveyPage(movePageData);
 };
 
 export const copySurveyPage = async (data: {
