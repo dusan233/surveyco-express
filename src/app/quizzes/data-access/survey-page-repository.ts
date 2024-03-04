@@ -6,6 +6,7 @@ import {
   PlacePageDTO,
   QuestionType,
 } from "../../../types/types";
+import { assertMaxPagesNotExceeded } from "../domain/survey-page-validators";
 
 export const getSurveyPages = async (surveyId: string) => {
   const pages = await prisma.surveyPage.findMany({
@@ -450,7 +451,12 @@ export const deleteSurveyPage = async (pageId: string, surveyId: string) => {
 export const createSurveyPage = async (surveyId: string) => {
   return prisma.$transaction(
     async (tx) => {
-      const createdPage = await prisma.surveyPage.create({
+      const surveyPageCount = await tx.surveyPage.count({
+        where: { surveyId },
+      });
+      assertMaxPagesNotExceeded(surveyPageCount);
+
+      const createdPage = await tx.surveyPage.create({
         data: {
           number:
             (await prisma.surveyPage.count({

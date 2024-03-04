@@ -4,7 +4,7 @@ import { HttpStatusCode } from "../../../types/types";
 export const assertMaxPagesNotExceeded = (pageCount: number) => {
   if (pageCount === 20)
     throw new AppError(
-      "BadRequest",
+      "MaxPagesExceeded",
       "Max number of pages per survey is 20.",
       HttpStatusCode.BAD_REQUEST,
       true
