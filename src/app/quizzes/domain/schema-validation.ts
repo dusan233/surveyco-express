@@ -33,7 +33,8 @@ export const updateQuestionSchema = z.object({
       description: z
         .string()
         .trim()
-        .min(1, "You must enter question description."),
+        .min(1, "You must enter question description.")
+        .max(2500, "Description can have max of 2500 characters."),
       descriptionImage: z.string().or(z.null()),
       id: z.string(),
       required: z.boolean(),
@@ -45,11 +46,13 @@ export const updateQuestionSchema = z.object({
             description: z
               .string()
               .trim()
-              .min(1, "You must enter option text."),
+              .min(1, "You must enter option text.")
+              .max(2500, "Description can have max of 2500 characters."),
             descriptionImage: z.string().or(z.null()),
           })
         )
         .nonempty("You must add at least one option.")
+        .max(30, "Max. number of options is 30.")
         .optional(),
     })
     .refine((values) => {
@@ -75,7 +78,8 @@ export const createQuestionSchema = z.object({
       description: z
         .string()
         .trim()
-        .min(1, "You must enter question description."),
+        .min(1, "You must enter question description.")
+        .max(2500, "Description can have max of 2500 characters."),
       descriptionImage: z.string().or(z.null()),
       required: z.boolean(),
       randomize: z.boolean().optional(),
@@ -86,11 +90,13 @@ export const createQuestionSchema = z.object({
             description: z
               .string()
               .trim()
-              .min(1, "You must enter option text."),
+              .min(1, "You must enter option text.")
+              .max(2500, "Description can have max of 2500 characters."),
             descriptionImage: z.string().or(z.null()),
           })
         )
         .nonempty("You must add at least one option.")
+        .max(30, "Max. number of options is 30.")
         .optional(),
     })
     .refine((values) => {

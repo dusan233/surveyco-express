@@ -107,7 +107,7 @@ export const updateQuestion = async (updateQuestion: UpdateQuestionDTO) => {
                     },
                   },
                   upsert: updateQuestion.data.options?.map((option) => ({
-                    where: { id: option.id || "dlsl" },
+                    where: { id: option.id || "" },
                     create: {
                       description: option.description,
                       description_image: option.descriptionImage,
