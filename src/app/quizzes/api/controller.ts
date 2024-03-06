@@ -72,6 +72,7 @@ import * as collectorService from "../../collectors/domain/services";
 import * as surveyUseCase from "../domain/survey-use-case";
 import * as surveyPageUseCase from "../domain/survey-page-use-case";
 import * as surveyQuestionUseCase from "../domain/survey-question-use-case";
+import * as questionRsponseRepository from "../data-access/question-response-repository";
 import {
   assertCollectorNotFinished,
   assertPageBelongsToSurvey,
@@ -682,10 +683,23 @@ const getSurveyQuestionsHandler = async (
   assertPageBelongsToSurvey(page!, survey!.id);
 
   const questions = await surveyQuestionUseCase.getQuestions(req.query.pageId);
+  const questionsResponseCount =
+    await questionRsponseRepository.getQuestionResponseCountPerQuestion(
+      questions.map((q) => q.id)
+    );
+  const formatedQuestions = questions.map((q) => {
+    const questionResponseCount = questionsResponseCount.find(
+      (qRes) => qRes.questionId === q.id
+    );
+
+    if (questionResponseCount)
+      return { ...q, hasResponses: questionResponseCount._count > 0 };
+    return q;
+  });
 
   return res
     .status(HttpStatusCode.OK)
-    .json({ questions, page: req.query.pageId });
+    .json({ questions: formatedQuestions, page: req.query.pageId });
 };
 
 const deleteSurveyPageHandler = async (

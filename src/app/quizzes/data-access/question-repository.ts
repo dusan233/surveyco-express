@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import prisma from "../../../prismaClient";
 import {
   CreateQuestionDTO,
+  HttpStatusCode,
   OperationPosition,
   PlaceQuestionDTO,
   QuestionType,
@@ -14,6 +15,7 @@ import {
   assertQuestionBelongsToSurvey,
   assertQuestionExists,
 } from "../domain/validators";
+import { AppError } from "../../../lib/error-handling";
 
 export const getQuestionsByPageId = async (pageId: string) => {
   const questions = await prisma.question.findMany({
@@ -84,6 +86,38 @@ export const deleteQuestion = async (questionId: string) => {
 export const updateQuestion = async (updateQuestion: UpdateQuestionDTO) => {
   return await prisma.$transaction(
     async (tx) => {
+      const [questionResponseCount, questionOptions] = await Promise.all([
+        tx.questionResponse.count({
+          where: { questionId: updateQuestion.data.id },
+        }),
+        tx.questionOption.findMany({
+          where: { questionId: updateQuestion.data.id },
+        }),
+      ]);
+
+      if (
+        questionResponseCount > 0 &&
+        [
+          QuestionType.checkboxes,
+          QuestionType.dropdown,
+          QuestionType.multiple_choice,
+        ].includes(updateQuestion.data.type)
+      ) {
+        questionOptions.forEach((qOption) => {
+          const optionExistsInUpdateData = !!updateQuestion.data.options!.find(
+            (option) => option.id === qOption.id
+          );
+
+          if (!optionExistsInUpdateData)
+            throw new AppError(
+              "BadRequest",
+              "Question option cant be deleted because this question has responses.",
+              HttpStatusCode.BAD_REQUEST,
+              true
+            );
+        });
+      }
+
       const updatedQuestion = await tx.question.update({
         include: { options: true },
         where: { id: updateQuestion.data.id },

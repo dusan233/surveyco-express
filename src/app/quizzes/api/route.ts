@@ -1,4 +1,7 @@
-import { ClerkExpressRequireAuth } from "@clerk/clerk-sdk-node";
+import {
+  ClerkExpressRequireAuth,
+  ClerkExpressWithAuth,
+} from "@clerk/clerk-sdk-node";
 import express from "express";
 import {
   asyncHandler,
