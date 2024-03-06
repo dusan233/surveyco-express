@@ -350,6 +350,7 @@ export const copySurveyPage = async (copyPageData: PlacePageDTO) => {
                       create: q.options.map((option) => ({
                         description: option.description,
                         description_image: option.description_image,
+                        number: option.number,
                       })),
                     }
                   : undefined,

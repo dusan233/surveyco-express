@@ -111,10 +111,12 @@ export const updateQuestion = async (updateQuestion: UpdateQuestionDTO) => {
                     create: {
                       description: option.description,
                       description_image: option.descriptionImage,
+                      number: option.number,
                     },
                     update: {
                       description: option.description,
                       description_image: option.descriptionImage,
+                      number: option.number,
                     },
                   })),
                 }
@@ -477,6 +479,7 @@ export const copyQuestion = async (copyQuestionData: PlaceQuestionDTO) => {
                   create: copyQuestion!.options.map((option) => ({
                     description: option.description,
                     description_image: option.description_image,
+                    number: option.number,
                   })),
                 }
               : undefined,
@@ -582,6 +585,7 @@ export const addQuestion = async (createQuestion: CreateQuestionDTO) => {
                   create: createQuestion.data.options?.map((option) => ({
                     description: option.description,
                     description_image: option.descriptionImage,
+                    number: option.number,
                   })),
                 }
               : undefined,

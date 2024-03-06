@@ -559,6 +559,7 @@ export const copySurveyPage = async (
                     create: q.options.map((option) => ({
                       description: option.description,
                       description_image: option.description_image,
+                      number: option.number,
                     })),
                   }
                 : undefined,
@@ -1022,10 +1023,12 @@ export const updateQuestion = async (data: Questione, surveyId: string) => {
                     create: {
                       description: option.description,
                       description_image: option.descriptionImage,
+                      number: option.number,
                     },
                     update: {
                       description: option.description,
                       description_image: option.descriptionImage,
+                      number: option.number,
                     },
                   })
                 ),
@@ -1131,6 +1134,7 @@ export const createQuestion = async (
                   (option) => ({
                     description: option.description,
                     description_image: option.descriptionImage,
+                    number: option.number,
                   })
                 ),
               }
@@ -1179,6 +1183,7 @@ export const saveQuestion = async (
                   where: { id: option.id || "dlsl" },
                   create: {
                     description: option.description,
+                    number: option.number,
                   },
                   update: { description: option.description },
                 })
@@ -1198,7 +1203,10 @@ export const saveQuestion = async (
         questionData.type !== QuestionType.textbox
           ? {
               create: (questionData as MultiChoiceQuestion).options.map(
-                (option) => ({ description: option.description })
+                (option) => ({
+                  description: option.description,
+                  number: option.number,
+                })
               ),
             }
           : undefined,

@@ -151,6 +151,7 @@ export interface Option {
   description: string;
   descriptionImage: string | null;
   id?: string;
+  number: number;
 }
 export enum QuestionType {
   multiple_choice = "multiple_choice",

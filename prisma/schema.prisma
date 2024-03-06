@@ -34,6 +34,7 @@ model QuestionOption {
   id String   @id @default(uuid())
   description String
   description_image String?
+  number Int 
   question Question @relation(fields: [questionId], references: [id])
   questionId String
   created_at DateTime @default(now())

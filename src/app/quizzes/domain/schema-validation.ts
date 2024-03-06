@@ -49,6 +49,7 @@ export const updateQuestionSchema = z.object({
               .min(1, "You must enter option text.")
               .max(2500, "Description can have max of 2500 characters."),
             descriptionImage: z.string().or(z.null()),
+            number: z.number().positive(),
           })
         )
         .nonempty("You must add at least one option.")
@@ -93,6 +94,7 @@ export const createQuestionSchema = z.object({
               .min(1, "You must enter option text.")
               .max(2500, "Description can have max of 2500 characters."),
             descriptionImage: z.string().or(z.null()),
+            number: z.number().positive(),
           })
         )
         .nonempty("You must add at least one option.")
