@@ -1,47 +1,33 @@
 import formidable from "formidable";
 import { Request, Response } from "express";
 import { HttpStatusCode } from "../../../types/types";
-import { s3Client } from "../../../s3-client";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { promises as fs } from "fs";
-import { AppError } from "../../../lib/errors";
-import { v4 as uuid4 } from "uuid";
-import config from "../../../config";
+import * as surveyUseCase from "../../quizzes/domain/survey-use-case";
+import { AppError } from "../../../lib/error-handling";
+import { assertSurveyExists } from "../../quizzes/domain/validators";
+import { uploadMedia } from "../domain/upload-media-use-case";
 
 const uploadMediaHandler = async (
   req: Request<any, any, any, { surveyId?: string }>,
   res: Response
 ) => {
-  const form = formidable({ maxFileSize: 10000000, maxFiles: 1 });
   const surveyId = req.query.surveyId;
 
-  if (!surveyId) {
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-  }
+  if (!surveyId)
+    throw new AppError("BadRequest", "", HttpStatusCode.BAD_REQUEST, true);
 
+  const survey = await surveyUseCase.getSurvey(surveyId);
+  assertSurveyExists(survey);
+
+  const form = formidable({ maxFileSize: 10000000, maxFiles: 1 });
   const [_, files] = await form.parse(req);
 
   const file = files.file?.[0];
 
-  if (!file)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  const filePath = file.filepath;
-  let rawData = await fs.readFile(filePath);
-
-  const fileName = uuid4() + "." + file.originalFilename?.split(".")[1];
-  await s3Client.send(
-    new PutObjectCommand({
-      Bucket: config.get("aws.bucketname"),
-      Key: `survey/${surveyId}/` + fileName,
-      Body: rawData,
-      ContentType: file.mimetype ?? "binady/octet-stream",
-    })
-  );
+  const fileUrl = await uploadMedia(file, surveyId);
 
   return res.status(HttpStatusCode.OK).json({
     success: true,
-    fileUrl: `https://surveyco-survey-files.s3.eu-central-1.amazonaws.com/survey/${surveyId}/${fileName}`,
+    fileUrl,
   });
 };
 
