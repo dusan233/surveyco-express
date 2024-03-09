@@ -83,7 +83,7 @@ model SurveyResponse {
   id          String  @id @default(uuid())
   created_at DateTime @default(now())
   updated_at DateTime? @updatedAt
-  collector SurveyCollector @relation(fields: [collectorId], references: [id])
+  collector SurveyCollector @relation(fields: [collectorId], references: [id], onDelete: Cascade)
   survey Quiz @relation(fields: [surveyId], references: [id])
   surveyId String
   collectorId String
@@ -95,7 +95,7 @@ model SurveyResponse {
 
 model QuestionResponse {
   id          String  @id @default(uuid())
-  surveyResponse SurveyResponse @relation(fields: [surveyResponseId], references: [id])
+  surveyResponse SurveyResponse @relation(fields: [surveyResponseId], references: [id], onDelete: Cascade)
   surveyResponseId String
   question Question @relation(fields: [questionId], references: [id])
   questionId String
@@ -106,7 +106,7 @@ model QuestionResponse {
 
 model QuestionAnswer {
   id          String  @id @default(uuid())
-  questionResponse QuestionResponse @relation(fields: [questionResponseId], references: [id])
+  questionResponse QuestionResponse @relation(fields: [questionResponseId], references: [id], onDelete: Cascade)
   questionResponseId String
   questionOption QuestionOption? @relation(fields: [questionOptionId], references: [id])
   questionOptionId String?
