@@ -1,6 +1,6 @@
 import { AppError } from "../../../lib/error-handling";
 import { HttpStatusCode } from "../../../types/types";
-import { userSurveysQueryParamsSchema } from "../api/schemaValidation";
+import { userSurveysQueryParamsSchema } from "./schema-validation";
 
 export const validateUserSurveysQueryParams = (queryParams: {
   [key: string]: string;

@@ -7,16 +7,12 @@ import {
   UpdateCollectorStatusRequestBody,
 } from "../../../types/types";
 import { AppError as AppErr } from "../../../lib/error-handling/index";
-import { updateSurveyCollectorStatus } from "../domain/services";
-import * as collectorService from "../domain/services";
+import * as collectorUseCase from "../domain/collector-use-case";
 
-const createSurveyCollectorHandler = async (
-  req: Request<never, never, CreateCollectorData>,
-  res: Response
-) => {
+const createSurveyCollectorHandler = async (req: Request, res: Response) => {
   const userId = req.auth.userId;
 
-  const collector = await collectorService.createSurveyCollector(
+  const collector = await collectorUseCase.createSurveyCollector(
     req.body,
     userId
   );
@@ -25,13 +21,13 @@ const createSurveyCollectorHandler = async (
 };
 
 const updateSurveyCollectorStatusHandler = async (
-  req: Request<CollectorParams, never, UpdateCollectorStatusRequestBody>,
+  req: Request<CollectorParams>,
   res: Response
 ) => {
   const userId = req.auth.userId;
   const collectorId = req.params.collectorId;
 
-  const updatedCollector = await updateSurveyCollectorStatus(
+  const updatedCollector = await collectorUseCase.updateCollectorStatus(
     req.body,
     collectorId,
     userId
@@ -40,26 +36,26 @@ const updateSurveyCollectorStatusHandler = async (
   return res.status(HttpStatusCode.OK).json(updatedCollector);
 };
 
-const deleteSurveyCollectorHandler = async (
+const deleteCollectorHandler = async (
   req: Request<CollectorParams>,
   res: Response
 ) => {
   const userId = req.auth.userId;
   const collectorId = req.params.collectorId;
 
-  await collectorService.deleteSurveyCollector(collectorId, userId);
+  await collectorUseCase.deleteSurveyCollector(collectorId, userId);
 
   return res.sendStatus(HttpStatusCode.NO_CONTENT);
 };
 
 const updateSurveyCollectorHandler = async (
-  req: Request<CollectorParams, never, UpdateCollectorRequestBody>,
+  req: Request<CollectorParams>,
   res: Response
 ) => {
   const userId = req.auth.userId;
   const collectorId = req.params.collectorId;
 
-  const updatedCollector = await collectorService.updateSurveyCollector(
+  const updatedCollector = await collectorUseCase.updateCollector(
     req.body,
     collectorId,
     userId
@@ -68,13 +64,13 @@ const updateSurveyCollectorHandler = async (
   return res.status(HttpStatusCode.OK).json(updatedCollector);
 };
 
-const getSurveyCollectorHandler = async (
+const getCollectorHandler = async (
   req: Request<CollectorParams>,
   res: Response
 ) => {
   const collectorId = req.params.collectorId;
 
-  const collector = await collectorService.getSurveyCollector(collectorId);
+  const collector = await collectorUseCase.getCollector(collectorId);
 
   if (!collector)
     throw new AppErr(
@@ -89,8 +85,8 @@ const getSurveyCollectorHandler = async (
 
 export default {
   createSurveyCollectorHandler,
-  getSurveyCollectorHandler,
-  deleteSurveyCollectorHandler,
+  getCollectorHandler,
+  deleteCollectorHandler,
   updateSurveyCollectorStatusHandler,
   updateSurveyCollectorHandler,
 };

@@ -14,7 +14,7 @@ export const getQuestionResponseCountPerQuestion = async (
   });
 };
 
-export const getQuestionResponsesForSurveyResponse = async (
+export const getQuestionResponsesBySurveyResponseId = async (
   responseId: string,
   questionIds: string[]
 ) => {

@@ -8,15 +8,16 @@ import {
   saveSurveyResponseSchema,
   surveyResponseQuestionResponseSchema,
 } from "../app/quizzes/api/schemaValidation";
-import {
-  updateSurveyCollectorSchema,
-  updateSurveyCollectorStatusSchema,
-} from "../app/collectors/api/schemaValidation";
+
 import { SurveyRecord } from "../app/quizzes/data-access/survey-repository";
 import {
   createQuestionSchema,
   updateQuestionSchema,
 } from "../app/quizzes/domain/schema-validation";
+import {
+  updateSurveyCollectorSchema,
+  updateSurveyCollectorStatusSchema,
+} from "../app/collectors/domain/schema-validation";
 
 export type CreateSurveyData = z.infer<typeof createQuizSchema>;
 export type CreateSurveyDTO = CreateSurveyData & { userId: string };
@@ -28,6 +29,11 @@ export type UpdateCollectorStatusData = z.infer<
 export type UpdateCollectorNameData = z.infer<
   typeof updateSurveyCollectorSchema
 >;
+export type UpdateCollectorDTO = {
+  collectorId: string;
+  status?: CollectorStatus;
+  name?: string;
+};
 export type OrderByObject = { column: string; type: "asc" | "desc" };
 
 export type SurveyResponseRecord = {

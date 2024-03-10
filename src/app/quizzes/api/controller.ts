@@ -16,7 +16,6 @@ import {
   deleteSurveyPage,
   copySurveyPage,
   moveSurveyPage,
-  getSurveyResponseQuestionResponses,
   getSurveyCollectors,
   getSurveyResponseCount,
   getSurveyResponses,
@@ -48,7 +47,6 @@ import {
 import prisma from "../../../prismaClient";
 import { AppError } from "../../../lib/errors";
 import { AppError as AppErr } from "../../../lib/error-handling/index";
-import { getSurveyCollector } from "../../collectors/domain/services";
 import {
   add,
   addDays,
@@ -68,11 +66,13 @@ import {
   setSurveyResponseDataCookie,
 } from "../../../lib/utils";
 import * as surveyService from "../domain/services";
-import * as collectorService from "../../collectors/domain/services";
 import * as surveyUseCase from "../domain/survey-use-case";
+import * as surveyResponseUseCase from "../domain/survey-response-use-case";
+import * as collectorUseCase from "../../collectors/domain/collector-use-case";
 import * as surveyPageUseCase from "../domain/survey-page-use-case";
 import * as surveyQuestionUseCase from "../domain/survey-question-use-case";
 import * as questionRsponseRepository from "../data-access/question-response-repository";
+import * as questionResponseUseCase from "../domain/question-response-use-case";
 import {
   assertCollectorNotFinished,
   assertPageBelongsToSurvey,
@@ -100,17 +100,17 @@ const createSurveyHandler = async (req: Request, res: Response) => {
 const getSurveyHandler = async (req: Request<SurveyParams>, res: Response) => {
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
-  const survey = await surveyService.getSurveyById(surveyId);
+  const survey = await surveyUseCase.getSurvey(surveyId);
 
   assertSurveyExists(survey);
   assertUserCreatedSurvey(survey!, userId);
 
   const [surveyPageCount, surveyResponseCount, questionCount, surveyStatus] =
     await Promise.all([
-      surveyService.getSurveyPagesCount(surveyId),
-      surveyService.getSurveyResponseCount(surveyId),
-      surveyService.getSurveyQuestionCount(surveyId),
-      surveyService.getSurveyStatus(surveyId),
+      surveyUseCase.getSurveyPageCount(surveyId),
+      surveyUseCase.getSurveyResponseCount(surveyId),
+      surveyUseCase.getSurveyQuestionCount(surveyId),
+      surveyUseCase.getSurveyStatus(surveyId),
     ]);
 
   const surveyData: SurveyDTO = {
@@ -131,14 +131,13 @@ const getSurveyResponsesVolumeHandler = async (
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
 
-  const survey = await surveyService.getSurveyById(surveyId);
+  const survey = await surveyUseCase.getSurvey(surveyId);
 
   assertSurveyExists(survey);
   assertUserCreatedSurvey(survey!, userId);
 
-  const surveyResponseVolume = await surveyService.getSurveyResponseVolume(
-    surveyId
-  );
+  const surveyResponseVolume =
+    await surveyResponseUseCase.getSurveyResponseVolume(surveyId);
 
   return res.status(HttpStatusCode.OK).json(surveyResponseVolume);
 };
@@ -304,10 +303,11 @@ const getSurveyResponseQuestionResponsesHandler = async (
     );
 
     if (responseExists) {
-      const questionResponses = await getSurveyResponseQuestionResponses(
-        responseExists.id,
-        questionsIds
-      );
+      const questionResponses =
+        await questionResponseUseCase.getQuestionResponses(
+          responseExists.id,
+          questionsIds
+        );
 
       return res.status(HttpStatusCode.OK).json(questionResponses);
     }
@@ -329,7 +329,7 @@ const saveSurveyResponseHandler = async (
   const validatedData = validateSaveSurveyResponse(req.body);
 
   if (validatedData.isPreview) {
-    const surveyResponse = await surveyService.saveSurveyResponse(
+    const surveyResponse = await surveyResponseUseCase.saveSurveyResponse(
       validatedData,
       responderIPAddress,
       null,
@@ -352,7 +352,7 @@ const saveSurveyResponseHandler = async (
         surveyRes.collectorId === collectorId && surveyRes.surveyId === surveyId
     );
 
-    const surveyResponse = await surveyService.saveSurveyResponse(
+    const surveyResponse = await surveyResponseUseCase.saveSurveyResponse(
       validatedData,
       responderIPAddress,
       responseExists?.id ?? null,
@@ -406,25 +406,17 @@ const getSurveyQuestionsAndResponsesHandler = async (
   const surveyPageId = validatedQParams.pageId;
 
   const [survey, page, questions, collector] = await Promise.all([
-    surveyService.getSurveyById(surveyId),
-    surveyService.getSurveyPage(surveyPageId),
-    surveyService.getPageQuestions(surveyId, surveyPageId),
-    collectorService.getSurveyCollector(collectorId),
+    surveyUseCase.getSurvey(surveyId),
+    surveyPageUseCase.getSurveyPage(surveyPageId),
+    surveyQuestionUseCase.getQuestions(surveyPageId),
+    collectorUseCase.getCollector(collectorId),
   ]);
 
   assertSurveyExists(survey);
-  if (
-    !page ||
-    page.surveyId !== surveyId ||
-    !collector ||
-    collector.surveyId !== surveyId
-  )
-    throw new AppErr(
-      "BadRequest",
-      "Invalid inputs.",
-      HttpStatusCode.BAD_REQUEST,
-      true
-    );
+  assertPageExists(page);
+  assertPageBelongsToSurvey(page!, survey!.id);
+  assertCollectorExists(collector);
+  assertCollectorBelongsToSurvey(survey!, collector!);
   //if survey/collector bond already submitted throw
   const blockedCollectors = getBlockedCollectorsFromCookies(req.signedCookies);
   assertCollectorNotFinished(blockedCollectors, collectorId);
@@ -438,7 +430,7 @@ const getSurveyQuestionsAndResponsesHandler = async (
   );
 
   const questionResponses = responseExists
-    ? await surveyService.getSurveyResponseQuestionResponses(
+    ? await questionResponseUseCase.getQuestionResponses(
         responseExists.id,
         questions.map((q) => q.id)
       )
@@ -472,25 +464,20 @@ const getPageQuestionResultsHandler = async (
     );
 
   const [survey, page] = await Promise.all([
-    surveyService.getSurveyById(surveyId),
-    surveyService.getSurveyPage(req.query.pageId),
+    surveyUseCase.getSurvey(surveyId),
+    surveyPageUseCase.getSurveyPage(req.query.pageId),
   ]);
 
   assertSurveyExists(survey);
   assertUserCreatedSurvey(survey!, userId);
+  assertPageExists(page);
+  assertPageBelongsToSurvey(page!, survey!.id);
 
-  if (!page || page.surveyId !== surveyId)
-    throw new AppErr(
-      "NotFound",
-      "Resource not found.",
-      HttpStatusCode.NOT_FOUND,
-      true
+  const questionsResults =
+    await surveyQuestionUseCase.getQuestionResultsByPageId(
+      surveyId,
+      req.query.pageId
     );
-
-  const questionsResults = await getSurveyPageQuestionResults(
-    surveyId,
-    req.query.pageId
-  );
 
   return res.status(HttpStatusCode.OK).json(questionsResults);
 };
@@ -544,7 +531,7 @@ const getSurveyResponseAnswersHandler = async (
 
   const questions = await getQuestions(surveyId, pageNum);
 
-  const questionResponses = await getSurveyResponseQuestionResponses(
+  const questionResponses = await questionResponseUseCase.getQuestionResponses(
     responseId,
     questions.map((q) => q.id)
   );
@@ -577,23 +564,17 @@ const getSurveyResponseHandler = async (
     );
 
   const [survey, page] = await Promise.all([
-    surveyService.getSurveyById(surveyId),
-    surveyService.getSurveyPage(req.query.pageId),
+    surveyUseCase.getSurvey(surveyId),
+    surveyPageUseCase.getSurveyPage(req.query.pageId),
   ]);
   assertSurveyExists(survey);
   assertUserCreatedSurvey(survey!, userId);
-
-  if (!page || page.surveyId !== surveyId)
-    throw new AppErr(
-      "NotFound",
-      "Resource not found.",
-      HttpStatusCode.NOT_FOUND,
-      true
-    );
+  assertPageExists(page);
+  assertPageBelongsToSurvey(page!, survey!.id);
 
   const [surveyResponse, surveyResponseData] = await Promise.all([
-    surveyService.getSurveyResponse(surveyId, responseId),
-    surveyService.getSurveyResponseData(responseId, surveyId, req.query.pageId),
+    surveyResponseUseCase.getSurveyResponse(surveyId, responseId),
+    surveyResponseUseCase.getSurveyResponseData(responseId, req.query.pageId),
   ]);
 
   if (!surveyResponse)
@@ -618,14 +599,14 @@ const getSurveyResponsesHandler = async (
 ) => {
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
-  const survey = await surveyService.getSurveyById(surveyId);
+  const survey = await surveyUseCase.getSurvey(surveyId);
 
   const validatedQueryParams = validateSurveyResponsesQueryParams(req.query);
 
   assertSurveyExists(survey);
   assertUserCreatedSurvey(survey!, userId);
 
-  const surveyResponsesData = await surveyService.getSurveyResponses(
+  const surveyResponsesData = await surveyResponseUseCase.getSurveyResponses(
     surveyId,
     validatedQueryParams
   );
@@ -651,7 +632,7 @@ const getSurveyCollectorsHandler = async (
   assertSurveyExists(survey);
   assertUserCreatedSurvey(survey!, userId);
 
-  const surveyCollectors = await surveyService.getSurveyCollectors(
+  const surveyCollectors = await surveyUseCase.getSurveyCollectors(
     surveyId,
     validatedQueryParams
   );

@@ -2,7 +2,7 @@ import { HttpStatusCode, UserParams } from "../../../types/types";
 import { Request, Response } from "express";
 import { AppError } from "../../../lib/error-handling";
 import { validateUserSurveysQueryParams } from "../domain/validators";
-import * as userService from "../domain/services";
+import * as userUseCase from "../domain/user-use-case";
 
 const getUserSurveysHandler = async (
   req: Request<UserParams, any, never, { page?: string; sort?: string }>,
@@ -21,7 +21,7 @@ const getUserSurveysHandler = async (
       true
     );
 
-  const data = await userService.getUserSurveys(
+  const data = await userUseCase.getUserSurveys(
     userId,
     validatedQueryParams.page,
     validatedQueryParams.sort

@@ -24,7 +24,6 @@ import {
   validateNewSurvey,
   validateSaveSurveyResponse,
 } from "./validators";
-import * as collectorService from "../../collectors/domain/services";
 import * as surveyRepository from "../data-access/survey-repository";
 import * as surveyResponseRepository from "../data-access/survey-response-repository";
 import * as collectorRepository from "../../collectors/data-access/collectors.repository";
@@ -90,7 +89,7 @@ export const getSurveyResponses = async (
       skip,
       sort: params.sort,
     }),
-    surveyRepository.getSurveyResponseCount(surveyId),
+    surveyResponseRepository.getSurveyResponseCount(surveyId),
   ]);
 
   const responsesData: SurveyResponsesDTO = {
@@ -838,7 +837,7 @@ export const updateQuestionsNumber = async (
 };
 
 export const getSurveyResponseCount = async (surveyId: string) => {
-  return await surveyRepository.getSurveyResponseCount(surveyId);
+  return await surveyResponseRepository.getSurveyResponseCount(surveyId);
 };
 
 export const getSurveyCollectorCount = async (surveyId: string) => {
@@ -903,7 +902,7 @@ export const getSurveyResponseData = async (
   const questions = await questionRepository.getQuestionsByPageId(pageId);
   const questionIds = questions.map((q) => q.id);
   const questionResponses =
-    await questionResponseRepository.getQuestionResponsesForSurveyResponse(
+    await questionResponseRepository.getQuestionResponsesBySurveyResponseId(
       surveyResponseId,
       questionIds
     );
@@ -915,7 +914,7 @@ export const getSurveyResponseQuestionResponses = async (
   surveyResponseId: string,
   questionIds: string[]
 ) => {
-  return await questionResponseRepository.getQuestionResponsesForSurveyResponse(
+  return await questionResponseRepository.getQuestionResponsesBySurveyResponseId(
     surveyResponseId,
     questionIds
   );
@@ -967,7 +966,7 @@ export const saveSurveyResponse = async (
       status: submitting ? "complete" : "incomplete",
     };
 
-  const collector = await collectorService.getSurveyCollector(
+  const collector = await collectorRepository.getCollectorById(
     surveyResponseData.collectorId!
   );
   assertCollectorExists(collector);
@@ -1217,12 +1216,12 @@ export const saveQuestion = async (
 };
 
 export const getSurveyPagesCount = async (surveyId: string) => {
-  return await surveyRepository.getSurveyPageCount(surveyId);
+  return await surveyPageRepository.getSurveyPageCount(surveyId);
 };
 
 export const getSurveyStatus = async (surveyId: string) => {
   const collectorsDistinctStatuses =
-    await surveyRepository.getSurveyCollectorStatuses(surveyId);
+    await collectorRepository.getSurveyCollectorStatuses(surveyId);
 
   if (collectorsDistinctStatuses.length === 0) {
     return SurveyStatus.draft;
@@ -1236,7 +1235,7 @@ export const getSurveyStatus = async (surveyId: string) => {
 };
 
 export const getSurveyQuestionCount = async (surveyId: string) => {
-  return await surveyRepository.getSurveyQuestionCount(surveyId);
+  return await questionRepository.getSurveyQuestionCount(surveyId);
 };
 
 export const getSurveyPageQuestionsCount = async (

@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import prisma from "../../../prismaClient";
 import {
   CollectorStatus,
@@ -5,6 +6,7 @@ import {
   CollectrorRecord,
   CreateCollectorData,
   OrderByObject,
+  UpdateCollectorDTO,
 } from "../../../types/types";
 
 export const getCollectorCountBySurveyId = async (surveyId: string) => {
@@ -12,30 +14,29 @@ export const getCollectorCountBySurveyId = async (surveyId: string) => {
 };
 
 export const updateCollector = async (
-  collectorData: { name?: string; status?: string },
-  collectorId: string
+  collectorData: UpdateCollectorDTO
 ): Promise<CollectrorRecord> => {
+  const { collectorId, ...restData } = collectorData;
   return await prisma.surveyCollector.update({
-    where: { id: collectorId },
-    data: collectorData,
+    where: { id: collectorData.collectorId },
+    data: restData,
   });
 };
 
 export const deleteCollector = async (collectorId: string) => {
-  return prisma.$transaction(async (tx) => {
-    // this when u add deleted props to others
-    // await tx.surveyResponse.updateMany({where: {collectorId}, data: {
-    //   deleted: true
-    // }})
-
-    return await tx.surveyCollector.update({
-      where: { id: collectorId },
-      data: {
-        deleted: true,
-        status: "close",
-      },
-    });
+  return await prisma.surveyCollector.delete({
+    where: { id: collectorId },
   });
+};
+
+export const getSurveyCollectorStatuses = async (surveyId: string) => {
+  return (
+    await prisma.surveyCollector.findMany({
+      where: { deleted: false, surveyId },
+      distinct: ["status"],
+      select: { status: true },
+    })
+  ).map((collector) => collector.status);
 };
 
 export const getCollectorById = async (
@@ -51,28 +52,31 @@ export const getCollectorById = async (
 export const createCollector = async (
   data: CreateCollectorData
 ): Promise<CollectrorRecord> => {
-  const collector = await prisma.$transaction(async (tx) => {
-    const collectorName =
-      data.type === CollectorType.web_link
-        ? "Web Link " +
-          ((await tx.surveyCollector.count({
-            where: {
-              surveyId: data.surveyId,
-              type: CollectorType.web_link,
-            },
-          })) +
-            1)
-        : "New Collector";
+  const collector = await prisma.$transaction(
+    async (tx) => {
+      const collectorName =
+        data.type === CollectorType.web_link
+          ? "Web Link " +
+            ((await tx.surveyCollector.count({
+              where: {
+                surveyId: data.surveyId,
+                type: CollectorType.web_link,
+              },
+            })) +
+              1)
+          : "New Collector";
 
-    return await tx.surveyCollector.create({
-      data: {
-        name: collectorName,
-        type: data.type,
-        status: CollectorStatus.open,
-        survey: { connect: { id: data.surveyId } },
-      },
-    });
-  });
+      return await tx.surveyCollector.create({
+        data: {
+          name: collectorName,
+          type: data.type,
+          status: CollectorStatus.open,
+          survey: { connect: { id: data.surveyId } },
+        },
+      });
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+  );
 
   return collector;
 };

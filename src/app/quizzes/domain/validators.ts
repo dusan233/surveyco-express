@@ -21,7 +21,7 @@ import {
   updateQuestionSchema,
 } from "./schema-validation";
 
-export const validateNewSurvey = (newSurvey: CreateSurveyData) => {
+export const validateNewSurvey = (newSurvey: unknown) => {
   try {
     const data = createQuizSchema.parse(newSurvey);
     return data;

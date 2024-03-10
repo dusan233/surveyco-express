@@ -638,3 +638,6 @@ export const addQuestion = async (createQuestion: CreateQuestionDTO) => {
 
   return createdQuestion;
 };
+export const getSurveyQuestionCount = async (surveyId: string) => {
+  return await prisma.question.count({ where: { quizId: surveyId } });
+};

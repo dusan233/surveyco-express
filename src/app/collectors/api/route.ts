@@ -23,11 +23,11 @@ router.put(
 router.delete(
   "/:collectorId",
   ClerkExpressRequireAuth(),
-  asyncHandler(collectorController.deleteSurveyCollectorHandler)
+  asyncHandler(collectorController.deleteCollectorHandler)
 );
 router.get(
   "/:collectorId",
-  asyncHandler(collectorController.getSurveyCollectorHandler)
+  asyncHandler(collectorController.getCollectorHandler)
 );
 
 export default router;

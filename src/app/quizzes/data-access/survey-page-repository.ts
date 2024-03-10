@@ -448,6 +448,11 @@ export const deleteSurveyPage = async (pageId: string, surveyId: string) => {
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
   );
 };
+export const getPageCountBySurveyId = async (surveyId: string) => {
+  return await prisma.surveyPage.count({
+    where: { surveyId },
+  });
+};
 
 export const createSurveyPage = async (surveyId: string) => {
   return prisma.$transaction(

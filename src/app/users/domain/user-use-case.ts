@@ -10,8 +10,8 @@ export const getUserSurveys = async (
   const skip = (page - 1) * take;
 
   const [userSurveys, userSurveyCount] = await Promise.all([
-    surveyRepository.getUserSurveys(take, skip, userId, sort),
-    surveyRepository.getUserSurveyCount(userId),
+    surveyRepository.getSurveysByUserId(take, skip, userId, sort),
+    surveyRepository.getSurveyCountByUserId(userId),
   ]);
 
   const data: UserSurveysDTO = {
@@ -30,8 +30,4 @@ export const getUserSurveys = async (
   };
 
   return data;
-};
-
-export const getUserSurveyCount = async (userId: string) => {
-  return surveyRepository.getUserSurveyCount(userId);
 };

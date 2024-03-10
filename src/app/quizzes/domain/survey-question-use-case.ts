@@ -1,5 +1,8 @@
 import * as surveyRepository from "../data-access/survey-repository";
 import * as questionRepository from "../data-access/question-repository";
+import * as questionResponseRepository from "../data-access/question-response-repository";
+import * as questionAnswerRepository from "../data-access/question-answer-repository";
+import * as surveyResponseRepository from "../data-access/survey-response-repository";
 import {
   assertQuestionBelongsToSurvey,
   assertQuestionExists,
@@ -12,6 +15,7 @@ import {
 import {
   CreateQuestionDTO,
   PlaceQuestionDTO,
+  QuestionType,
   UpdateQuestionDTO,
 } from "../../../types/types";
 
@@ -129,4 +133,70 @@ export const deleteQuestion = async (data: {
   assertQuestionBelongsToSurvey(question!, survey!.id);
 
   return await questionRepository.deleteQuestion(data.questionId);
+};
+
+export const getQuestionResultsByPageId = async (
+  surveyId: string,
+  pageId: string
+) => {
+  const [questions, totalSurveyResponses] = await Promise.all([
+    questionRepository.getQuestionsByPageId(pageId),
+    surveyResponseRepository.getSurveyResponseCount(surveyId),
+  ]);
+
+  const questionResponses =
+    await questionResponseRepository.getQuestionResponseCountPerQuestion(
+      questions.map((q) => q.id)
+    );
+
+  const choiceResponseResults =
+    await questionAnswerRepository.getChoiceCountPerQuestion(
+      questions.filter((q) => q.type !== QuestionType.textbox).map((q) => q.id)
+    );
+
+  const textboxQuestionAnswers = (
+    await Promise.all(
+      questions
+        .filter((q) => q.type == QuestionType.textbox)
+        .map((q) => questionAnswerRepository.getQuestionAnswers(q.id))
+    )
+  ).flat();
+
+  const questionsResults = questions.map((q) => {
+    const questionResponsesCount =
+      questionResponses.find((qRes) => qRes.questionId === q.id)?._count || 0;
+    if (q.type === QuestionType.textbox) {
+      return {
+        ...q,
+        answeredCount: questionResponsesCount,
+        skippedCount: totalSurveyResponses - questionResponsesCount,
+        answers: textboxQuestionAnswers
+          .filter((answer) => answer.questionId === q.id)
+          .map((answer) => ({
+            id: answer.id,
+            questionResponseId: answer.questionResponseId,
+            text: answer.textAnswer,
+            updated_at: answer.updated_at,
+          })),
+      };
+    } else {
+      return {
+        ...q,
+        answeredCount: questionResponsesCount,
+        skippedCount: totalSurveyResponses - questionResponsesCount,
+        choices: q.options.map((qChoice) => {
+          const choiceResponsesCount =
+            choiceResponseResults.find(
+              (cRes) => cRes.questionOptionId === qChoice.id
+            )?._count || 0;
+          return {
+            ...qChoice,
+            answeredCount: choiceResponsesCount,
+          };
+        }),
+      };
+    }
+  });
+
+  return questionsResults;
 };

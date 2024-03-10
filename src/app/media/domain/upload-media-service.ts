@@ -1,5 +1,5 @@
 import config from "../../../config";
-import { s3Client } from "../../../s3-client";
+import { s3Client } from "./s3-client";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 export const uploadMediaToS3 = async (params: {

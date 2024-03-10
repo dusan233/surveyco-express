@@ -11,9 +11,9 @@ import {
   createSurveyCollectorSchema,
   updateSurveyCollectorSchema,
   updateSurveyCollectorStatusSchema,
-} from "../api/schemaValidation";
+} from "./schema-validation";
 
-export const validateCreateCollector = (newSurvey: CreateCollectorData) => {
+export const validateCreateCollector = (newSurvey: unknown) => {
   try {
     const data = createSurveyCollectorSchema.parse(newSurvey);
     return data;
@@ -50,9 +50,7 @@ export const assertCollectorBelongsToSurvey = (
     );
 };
 
-export const validateUpdateCollectorStatus = (
-  collectorData: UpdateCollectorStatusData
-) => {
+export const validateUpdateCollectorStatus = (collectorData: unknown) => {
   try {
     const data = updateSurveyCollectorStatusSchema.parse(collectorData);
     return data;
@@ -66,9 +64,7 @@ export const validateUpdateCollectorStatus = (
   }
 };
 
-export const validateUpdateCollectorName = (
-  collectorData: UpdateCollectorNameData
-) => {
+export const validateUpdateCollectorName = (collectorData: unknown) => {
   try {
     const data = updateSurveyCollectorSchema.parse(collectorData);
     return data;
