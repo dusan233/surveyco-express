@@ -10,7 +10,7 @@ import { WebhookEvent } from "@clerk/clerk-sdk-node";
 import prisma from "./prismaClient";
 import { errorHandler } from "./lib/error-handling";
 import { Server } from "http";
-import "./dickinurmouth";
+import "./global-express";
 import config from "./config";
 import helmet from "helmet";
 

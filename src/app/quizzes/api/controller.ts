@@ -1,63 +1,15 @@
-import { NextFunction, Request, Response } from "express";
-import {
-  createSurveyPage,
-  deleteQuestion,
-  getQuestion,
-  getQuestionsResult,
-  getQuestions,
-  getSurvey,
-  getSurveyPages,
-  getSurveyPageQuestionsCount,
-  saveQuestion,
-  saveSurveyResponse,
-  updateQuestionsNumber,
-  createQuestion,
-  updateQuestion,
-  deleteSurveyPage,
-  copySurveyPage,
-  moveSurveyPage,
-  getSurveyCollectors,
-  getSurveyResponseCount,
-  getSurveyResponses,
-  getSurveyResponse,
-  getSurveyPagesCount,
-  getSurveyCollectorCount,
-  getSurveyQuestionCount,
-  getSurveyStatus,
-  getSurveyPageQuestionResults,
-} from "../domain/services";
+import { Request, Response } from "express";
+
 import {
   CollectorParams,
-  CollectorType,
-  GetQuestionResultsRequestBody,
   HttpStatusCode,
-  MultiChoiceQuestion,
-  OperationPosition,
-  PlacePageReqBody,
-  PlaceQuestionReqBody,
-  Question,
-  QuestionType,
   SaveSurveyResponseRequestBody,
   SurveyDTO,
   SurveyPageParams,
   SurveyParams,
   SurveyQuestionParams,
-  SurveyResponseQuestionResponsesBody,
 } from "../../../types/types";
-import prisma from "../../../prismaClient";
-import { AppError } from "../../../lib/errors";
 import { AppError as AppErr } from "../../../lib/error-handling/index";
-import {
-  add,
-  addDays,
-  endOfDay,
-  format,
-  set,
-  setMilliseconds,
-  startOfDay,
-  sub,
-  subDays,
-} from "date-fns";
 import {
   getBlockedCollectorsFromCookies,
   getSavedSurveyResponsesFromCookies,
@@ -65,7 +17,6 @@ import {
   setBlockedCollectorsCookie,
   setSurveyResponseDataCookie,
 } from "../../../lib/utils";
-import * as surveyService from "../domain/services";
 import * as surveyUseCase from "../domain/survey-use-case";
 import * as surveyResponseUseCase from "../domain/survey-response-use-case";
 import * as collectorUseCase from "../../collectors/domain/collector-use-case";
@@ -92,7 +43,7 @@ import {
 const createSurveyHandler = async (req: Request, res: Response) => {
   const userId = req.auth.userId;
 
-  const newSurvey = await surveyService.createSurvey(req.body, userId);
+  const newSurvey = await surveyUseCase.createSurvey(req.body, userId);
 
   return res.status(HttpStatusCode.CREATED).json(newSurvey);
 };
@@ -192,35 +143,6 @@ const copyQuestionHandler = async (
   return res.status(HttpStatusCode.OK).json(createdQuestion);
 };
 
-const saveQuestionHandler = async (
-  req: Request<{ quizId: string }, any, { data: Question; pageId: string }>,
-  res: Response
-) => {
-  const quizId = req.params.quizId;
-  const userId = req.auth.userId;
-
-  const survey = await getSurvey(quizId);
-
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  const savedQuestion = await saveQuestion(
-    req.body.data,
-    quizId,
-    req.body.pageId
-  );
-  return res.status(201).json(savedQuestion);
-};
-
 const updateQuestionHandler = async (
   req: Request<SurveyParams>,
   res: Response
@@ -281,42 +203,42 @@ const createSurveyPageHandler = async (
   return res.status(HttpStatusCode.CREATED).json(createdPage);
 };
 
-const getSurveyResponseQuestionResponsesHandler = async (
-  req: Request<CollectorParams, any, SurveyResponseQuestionResponsesBody>,
-  res: Response
-) => {
-  const surveyId = req.params.surveyId;
-  const collectorId = req.params.collectorId;
-  const questionsIds = req.body.questionsIds;
+// const getSurveyResponseQuestionResponsesHandler = async (
+//   req: Request<CollectorParams, any, SurveyResponseQuestionResponsesBody>,
+//   res: Response
+// ) => {
+//   const surveyId = req.params.surveyId;
+//   const collectorId = req.params.collectorId;
+//   const questionsIds = req.body.questionsIds;
 
-  if (req.cookies && req.cookies.surveResponses) {
-    const surveyResponses: {
-      id: string;
-      surveyId: string;
-      collectorId: string;
-      submitted: boolean;
-    }[] = JSON.parse(req.cookies.surveyResponses);
+//   if (req.cookies && req.cookies.surveResponses) {
+//     const surveyResponses: {
+//       id: string;
+//       surveyId: string;
+//       collectorId: string;
+//       submitted: boolean;
+//     }[] = JSON.parse(req.cookies.surveyResponses);
 
-    const responseExists = surveyResponses.find(
-      (response) =>
-        response.surveyId === surveyId && collectorId === response.collectorId
-    );
+//     const responseExists = surveyResponses.find(
+//       (response) =>
+//         response.surveyId === surveyId && collectorId === response.collectorId
+//     );
 
-    if (responseExists) {
-      const questionResponses =
-        await questionResponseUseCase.getQuestionResponses(
-          responseExists.id,
-          questionsIds
-        );
+//     if (responseExists) {
+//       const questionResponses =
+//         await questionResponseUseCase.getQuestionResponses(
+//           responseExists.id,
+//           questionsIds
+//         );
 
-      return res.status(HttpStatusCode.OK).json(questionResponses);
-    }
+//       return res.status(HttpStatusCode.OK).json(questionResponses);
+//     }
 
-    return res.status(HttpStatusCode.OK).json([]);
-  }
+//     return res.status(HttpStatusCode.OK).json([]);
+//   }
 
-  return res.status(HttpStatusCode.OK).json([]);
-};
+//   return res.status(HttpStatusCode.OK).json([]);
+// };
 
 const saveSurveyResponseHandler = async (
   req: Request<SurveyParams, any, SaveSurveyResponseRequestBody>,
@@ -396,7 +318,7 @@ const saveSurveyResponseHandler = async (
 };
 
 const getSurveyQuestionsAndResponsesHandler = async (
-  req: Request<CollectorParams, any, never, unknown>,
+  req: Request<CollectorParams>,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;
@@ -482,66 +404,6 @@ const getPageQuestionResultsHandler = async (
   return res.status(HttpStatusCode.OK).json(questionsResults);
 };
 
-const getQuestionsResultHandler = async (
-  req: Request<SurveyParams, never, GetQuestionResultsRequestBody>,
-  res: Response
-) => {
-  const surveyId = req.params.surveyId;
-  const userId = req.auth.userId;
-
-  const survey = await getSurvey(surveyId);
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  if (survey.creatorId !== userId)
-    throw new AppError(
-      "",
-      "Unauthorized",
-      HttpStatusCode.UNAUTHORIZED,
-      "",
-      true
-    );
-
-  const questionsResults = await getQuestionsResult(
-    surveyId,
-    req.body.questionIds
-  );
-
-  return res.status(HttpStatusCode.OK).json(questionsResults);
-};
-
-const getSurveyResponseAnswersHandler = async (
-  req: Request<
-    SurveyParams & { responseId: string },
-    any,
-    never,
-    { page?: string }
-  >,
-  res: Response
-) => {
-  const surveyId = req.params.surveyId;
-  const responseId = req.params.responseId;
-  const page = Number(req.query.page);
-  const pageNum = isNaN(page) ? 1 : page;
-
-  const survey = await getSurvey(surveyId);
-
-  if (!survey)
-    throw new AppError("", "Not found", HttpStatusCode.BAD_REQUEST, "", true);
-
-  const questions = await getQuestions(surveyId, pageNum);
-
-  const questionResponses = await questionResponseUseCase.getQuestionResponses(
-    responseId,
-    questions.map((q) => q.id)
-  );
-
-  return res.status(HttpStatusCode.OK).json({
-    questions,
-    questionResponses,
-  });
-};
-
 const getSurveyResponseHandler = async (
   req: Request<
     SurveyParams & { responseId: string },
@@ -625,7 +487,7 @@ const getSurveyCollectorsHandler = async (
 ) => {
   const surveyId = req.params.surveyId;
   const userId = req.auth.userId;
-  const survey = await surveyService.getSurveyById(surveyId);
+  const survey = await surveyUseCase.getSurvey(surveyId);
 
   const validatedQueryParams = validateSurveyCollectorsQueryParams(req.query);
 
@@ -734,10 +596,8 @@ const moveSurveyPageHandler = async (
 export default {
   createSurveyHandler,
   getSurveyQuestionsHandler,
-  saveQuestionHandler,
   getSurveyHandler,
   saveSurveyResponseHandler,
-  getQuestionsResultHandler,
   getSurveyPagesHandler,
   deleteSurveyQuestionHandler,
   createSurveyPageHandler,
@@ -748,12 +608,10 @@ export default {
   deleteSurveyPageHandler,
   copySurveyPageHandler,
   moveSurveyPageHandler,
-  getSurveyResponseQuestionResponsesHandler,
   getSurveyQuestionsAndResponsesHandler,
   getSurveyCollectorsHandler,
   getSurveyResponsesHandler,
   getSurveyResponseHandler,
-  getSurveyResponseAnswersHandler,
   getSurveyResponsesVolumeHandler,
   getPageQuestionResultsHandler,
 };

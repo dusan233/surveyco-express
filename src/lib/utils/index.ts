@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 
 export function randomizeArray<T>(array: T[]): T[] {
   const newArray = [...array];

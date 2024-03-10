@@ -1,10 +1,97 @@
 import { z } from "zod";
-import { OperationPosition, QuestionType } from "../../../types/types";
+import {
+  OperationPosition,
+  QuestionType,
+  SurveyCategory,
+} from "../../../types/types";
 
 export const placePageSchema = z.object({
   position: z.nativeEnum(OperationPosition),
   pageId: z.string(),
 });
+
+export const createSurveySchema = z.object({
+  title: z.string().trim().min(1, "You must enter survey title."),
+  category: z.nativeEnum(SurveyCategory).optional(),
+});
+
+export const savedQuestionResponsesQueryParamsSchema = z.object({
+  pageId: z.string(),
+  collectorId: z.string(),
+});
+
+export const surveyCollectorsQueryParamsSchema = z.object({
+  page: z
+    .string()
+    .regex(/^\d+$/)
+    .optional()
+    .transform((value) => (value ? parseInt(value) : 1)),
+  take: z
+    .string()
+    .regex(/^\d+$/)
+    .optional()
+    .transform((value) => (value ? parseInt(value) : 10)),
+  sort: z
+    .string()
+    .regex(/^(name|updated_at|status|total_responses):(asc|desc)$/)
+    .optional()
+    .transform((value) => {
+      const [columnName, type] = value ? value.split(":") : ["name", "asc"];
+      return { column: columnName, type: type as "asc" | "desc" };
+    }),
+});
+
+export const surveyResponsesQueryParamsSchema = z.object({
+  page: z
+    .string()
+    .regex(/^\d+$/)
+    .optional()
+    .transform((value) => (value ? parseInt(value) : 1)),
+  sort: z
+    .string()
+    .regex(/^(status|updated_at|ip_address|collector):(asc|desc)$/)
+    .optional()
+    .transform((value) => {
+      const [columnName, type] = value
+        ? value.split(":")
+        : ["updated_at", "desc"];
+      return { column: columnName, type: type as "asc" | "desc" };
+    }),
+});
+
+export const saveSurveyResponseSchema = z
+  .object({
+    questionResponses: z.array(
+      z
+        .object({
+          id: z.string().optional(),
+          questionId: z.string(),
+          answer: z.string().or(z.array(z.string())),
+          questionType: z.nativeEnum(QuestionType),
+        })
+        .refine((questionRes) => {
+          if (questionRes.questionType === QuestionType.checkboxes) {
+            if (!Array.isArray(questionRes.answer)) return false;
+          } else {
+            if (typeof questionRes.answer !== "string") return false;
+          }
+
+          return true;
+        }, "Invalid input format.")
+    ),
+    collectorId: z.string().or(z.null()),
+    pageId: z.string(),
+    isPreview: z.boolean(),
+    surveyResposneStartTime: z.coerce.date(),
+  })
+  .refine((values) => {
+    if (values.isPreview && typeof values.collectorId === "string")
+      return false;
+    if (!values.isPreview && typeof values.collectorId !== "string")
+      return false;
+
+    return true;
+  }, "Invalid input format.");
 
 export const placeQuestionSchema = z
   .object({

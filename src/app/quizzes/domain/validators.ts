@@ -6,24 +6,22 @@ import {
   QuestionType,
   SaveSurveyResponseData,
 } from "../../../types/types";
+import { SurveyRecord } from "../data-access/survey-repository";
 import {
-  createQuizSchema,
+  createQuestionSchema,
+  createSurveySchema,
+  placePageSchema,
+  placeQuestionSchema,
   saveSurveyResponseSchema,
   savedQuestionResponsesQueryParamsSchema,
   surveyCollectorsQueryParamsSchema,
   surveyResponsesQueryParamsSchema,
-} from "../api/schemaValidation";
-import { SurveyRecord } from "../data-access/survey-repository";
-import {
-  createQuestionSchema,
-  placePageSchema,
-  placeQuestionSchema,
   updateQuestionSchema,
 } from "./schema-validation";
 
 export const validateNewSurvey = (newSurvey: unknown) => {
   try {
-    const data = createQuizSchema.parse(newSurvey);
+    const data = createSurveySchema.parse(newSurvey);
     return data;
   } catch (err) {
     throw new AppError(

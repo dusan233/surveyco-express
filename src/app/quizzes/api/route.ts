@@ -1,28 +1,8 @@
-import {
-  ClerkExpressRequireAuth,
-  ClerkExpressWithAuth,
-} from "@clerk/clerk-sdk-node";
+import { ClerkExpressRequireAuth } from "@clerk/clerk-sdk-node";
 import express from "express";
-import {
-  asyncHandler,
-  validate,
-  validateQuestionType,
-} from "../../../lib/middlewares";
-import {
-  createQuestionSchema,
-  createQuizSchema,
-  createSurveyCollectorSchema,
-  getQuestionResultsSchema,
-  placePageSchema,
-  placeQuestionSchema,
-  questionSchema,
-  saveQuestionSchema,
-  saveSurveyResponseSchema,
-  surveyResponseQuestionResponseSchema,
-  updateQuestionSchema,
-} from "./schemaValidation";
+import { asyncHandler } from "../../../lib/middlewares";
+
 import quizController from "./controller";
-import prisma from "../../../prismaClient";
 
 const router = express.Router();
 
@@ -68,17 +48,10 @@ router.post(
 router.put(
   "/:surveyId/page/:pageId/move",
   ClerkExpressRequireAuth(),
-  validate(placePageSchema),
   asyncHandler(quizController.moveSurveyPageHandler)
 );
 
 //results
-router.post(
-  "/:surveyId/questions/result",
-  ClerkExpressRequireAuth(),
-  validate(getQuestionResultsSchema),
-  asyncHandler(quizController.getQuestionsResultHandler)
-);
 router.get(
   "/:surveyId/questions/result",
   ClerkExpressRequireAuth(),
@@ -101,11 +74,6 @@ router.get(
   ClerkExpressRequireAuth(),
   asyncHandler(quizController.getSurveyResponseHandler)
 );
-router.get(
-  "/:surveyId/response/:responseId/answers",
-  ClerkExpressRequireAuth(),
-  asyncHandler(quizController.getSurveyResponseAnswersHandler)
-);
 
 //survey response
 router.put(
@@ -116,11 +84,6 @@ router.get(
   "/:surveyId/responseData",
   quizController.getSurveyQuestionsAndResponsesHandler
 );
-router.post(
-  "/:surveyId/response/questionResponses",
-  validate(surveyResponseQuestionResponseSchema),
-  asyncHandler(quizController.getSurveyResponseQuestionResponsesHandler)
-);
 
 //survey pages
 router.post(
@@ -130,14 +93,6 @@ router.post(
 );
 
 //questions
-router.put(
-  "/:quizId/save-question",
-  ClerkExpressRequireAuth(),
-  validate(saveQuestionSchema),
-  validateQuestionType,
-  asyncHandler(quizController.saveQuestionHandler)
-);
-
 router.post(
   "/:surveyId/question",
   ClerkExpressRequireAuth(),
@@ -148,13 +103,6 @@ router.put(
   ClerkExpressRequireAuth(),
   asyncHandler(quizController.updateQuestionHandler)
 );
-// router.put(
-//   "/:surveyId/question/v2",
-//   ClerkExpressRequireAuth(),
-//   validate(updateQuestionSchema, true),
-//   validateQuestionType,
-//   asyncHandler(quizController.updateQuestionHandler)
-// );
 router.delete(
   "/:surveyId/question/:questionId",
   ClerkExpressRequireAuth(),

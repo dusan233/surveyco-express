@@ -1,25 +1,21 @@
 import { z } from "zod";
-import {
-  createQuizSchema,
-  createSurveyCollectorSchema,
-  getQuestionResultsSchema,
-  placePageSchema,
-  placeQuestionSchema,
-  saveSurveyResponseSchema,
-  surveyResponseQuestionResponseSchema,
-} from "../app/quizzes/api/schemaValidation";
 
 import { SurveyRecord } from "../app/quizzes/data-access/survey-repository";
 import {
   createQuestionSchema,
+  createSurveySchema,
+  placePageSchema,
+  placeQuestionSchema,
+  saveSurveyResponseSchema,
   updateQuestionSchema,
 } from "../app/quizzes/domain/schema-validation";
 import {
+  createSurveyCollectorSchema,
   updateSurveyCollectorSchema,
   updateSurveyCollectorStatusSchema,
 } from "../app/collectors/domain/schema-validation";
 
-export type CreateSurveyData = z.infer<typeof createQuizSchema>;
+export type CreateSurveyData = z.infer<typeof createSurveySchema>;
 export type CreateSurveyDTO = CreateSurveyData & { userId: string };
 export type CreateCollectorData = z.infer<typeof createSurveyCollectorSchema>;
 export type SaveSurveyResponseData = z.infer<typeof saveSurveyResponseSchema>;
@@ -135,9 +131,6 @@ export interface SurveyPageParams extends SurveyParams {
 
 export type PlaceQuestionReqBody = z.infer<typeof placeQuestionSchema>;
 export type PlacePageReqBody = z.infer<typeof placePageSchema>;
-export type SurveyResponseQuestionResponsesBody = z.infer<
-  typeof surveyResponseQuestionResponseSchema
->;
 
 export interface QuestionBase {
   id?: string;
@@ -202,9 +195,6 @@ export type UpdateCollectorStatusRequestBody = z.infer<
 >;
 export type UpdateCollectorRequestBody = z.infer<
   typeof updateSurveyCollectorSchema
->;
-export type GetQuestionResultsRequestBody = z.infer<
-  typeof getQuestionResultsSchema
 >;
 
 export enum HttpStatusCode {
