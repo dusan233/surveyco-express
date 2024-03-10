@@ -42,6 +42,7 @@ async function startWebServer(): Promise<AddressInfo> {
     async (req, res) => {
       try {
         const payload = JSON.stringify(req.body);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const headers = req.headers as any;
 
         const wh = new Webhook(config.get("clerkAuth.webhookSecretKey"));
@@ -103,10 +104,10 @@ async function openConnection(
 function defineErrorHandlingMiddleware(expressApp: express.Application) {
   expressApp.use(
     async (
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       error: any,
       req: express.Request,
-      res: express.Response,
-      next: express.NextFunction
+      res: express.Response
     ) => {
       if (error && typeof error === "object") {
         if (error.isTrusted === undefined || error.isTrusted === null) {

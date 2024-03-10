@@ -101,8 +101,8 @@ export const saveSurveyResponse = async (
     surveyPages.find((page) => page.number === surveyPages.length)?.id ===
     surveyResponseData.pageId;
   // make sure all required qeustions are answered before submit complete
-  if (submitting && surveyPages.length >= 2) {
-  }
+  // if (submitting && surveyPages.length >= 2) {
+  // }
 
   await checkForSurveyUpdated(
     surveyId,

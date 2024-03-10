@@ -13,7 +13,8 @@ export const uploadMedia = async (
     throw new AppError("BadRequest", "", HttpStatusCode.BAD_REQUEST, true);
 
   const filePath = file.filepath;
-  let rawData = await fs.readFile(filePath);
+  // eslint-disable-next-line security/detect-non-literal-fs-filename
+  const rawData = await fs.readFile(filePath);
 
   const fileName = uuid4() + "." + file.originalFilename?.split(".")[1];
   const key = `survey/${surveyId}/` + fileName;

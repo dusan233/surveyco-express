@@ -7,7 +7,7 @@ import { assertSurveyExists } from "@/app/quizzes/domain/validators";
 import { uploadMedia } from "../domain/upload-media-use-case";
 
 const uploadMediaHandler = async (
-  req: Request<any, any, any, { surveyId?: string }>,
+  req: Request<never, undefined, never, { surveyId?: string }>,
   res: Response
 ) => {
   const surveyId = req.query.surveyId;
@@ -19,7 +19,8 @@ const uploadMediaHandler = async (
   assertSurveyExists(survey);
 
   const form = formidable({ maxFileSize: 10000000, maxFiles: 1 });
-  const [_, files] = await form.parse(req);
+  const parsedResults = await form.parse(req);
+  const files = parsedResults[1];
 
   const file = files.file?.[0];
 

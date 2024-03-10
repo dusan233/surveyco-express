@@ -3,7 +3,6 @@ import { Request, Response } from "express";
 import {
   CollectorParams,
   HttpStatusCode,
-  SaveSurveyResponseRequestBody,
   SurveyDTO,
   SurveyPageParams,
   SurveyParams,
@@ -241,7 +240,7 @@ const createSurveyPageHandler = async (
 // };
 
 const saveSurveyResponseHandler = async (
-  req: Request<SurveyParams, any, SaveSurveyResponseRequestBody>,
+  req: Request<SurveyParams>,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;
@@ -371,7 +370,7 @@ const getSurveyQuestionsAndResponsesHandler = async (
 };
 
 const getPageQuestionResultsHandler = async (
-  req: Request<SurveyParams, any, never, { pageId?: string }>,
+  req: Request<SurveyParams, undefined, never, { pageId?: string }>,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;
@@ -407,7 +406,7 @@ const getPageQuestionResultsHandler = async (
 const getSurveyResponseHandler = async (
   req: Request<
     SurveyParams & { responseId: string },
-    any,
+    undefined,
     never,
     { pageId?: string }
   >,
@@ -456,7 +455,12 @@ const getSurveyResponseHandler = async (
 };
 
 const getSurveyResponsesHandler = async (
-  req: Request<SurveyParams, any, never, { page?: string; sort?: string }>,
+  req: Request<
+    SurveyParams,
+    undefined,
+    never,
+    { page?: string; sort?: string }
+  >,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;
@@ -479,7 +483,7 @@ const getSurveyResponsesHandler = async (
 const getSurveyCollectorsHandler = async (
   req: Request<
     SurveyPageParams,
-    any,
+    undefined,
     never,
     { page?: string; sort?: string; take?: string }
   >,
@@ -503,7 +507,7 @@ const getSurveyCollectorsHandler = async (
 };
 
 const getSurveyQuestionsHandler = async (
-  req: Request<SurveyParams, any, never, { pageId?: string }>,
+  req: Request<SurveyParams, undefined, never, { pageId?: string }>,
   res: Response
 ) => {
   const surveyId = req.params.surveyId;

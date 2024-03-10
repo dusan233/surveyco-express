@@ -18,7 +18,7 @@ export const updateCollector = async (
 ): Promise<CollectrorRecord> => {
   const { collectorId, ...restData } = collectorData;
   return await prisma.surveyCollector.update({
-    where: { id: collectorData.collectorId },
+    where: { id: collectorId },
     data: restData,
   });
 };

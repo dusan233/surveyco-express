@@ -233,6 +233,7 @@ export const isCheckboxQuestionResponseValid = (
         isValid = true;
     });
   } else {
+    return;
   }
 
   return isValid;
@@ -256,7 +257,7 @@ export const assertQuestionResponsesDataIsValid = (
     );
 
   const validQuestionsList = questions.map((q) => {
-    let isValid = true;
+    const isValid = true;
     const questionResponse = questionResponses.find(
       (qRes) => qRes.questionId === q.id
     );

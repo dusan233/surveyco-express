@@ -2,7 +2,7 @@ import { AppError, errorHandler } from "@/lib/error-handling";
 import { startWebServer } from "./server";
 
 startWebServer()
-  .then((res) => {
+  .then(() => {
     console.log("radi i server");
   })
   .catch((error) => {

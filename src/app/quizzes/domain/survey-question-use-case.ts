@@ -24,7 +24,7 @@ export const getQuestions = async (pageId: string) => {
 };
 
 export const updateQuestion = async (data: {
-  questionData: any;
+  questionData: unknown;
   surveyId: string;
   userId: string;
 }) => {

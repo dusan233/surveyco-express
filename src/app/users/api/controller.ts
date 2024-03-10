@@ -5,7 +5,7 @@ import { validateUserSurveysQueryParams } from "../domain/validators";
 import * as userUseCase from "../domain/user-use-case";
 
 const getUserSurveysHandler = async (
-  req: Request<UserParams, any, never, { page?: string; sort?: string }>,
+  req: Request<UserParams, undefined, never, { page?: string; sort?: string }>,
   res: Response
 ) => {
   const userId = req.params.userId;
