@@ -2,15 +2,15 @@ import * as surveyRepository from "../data-access/survey-repository";
 import * as surveyPageRepository from "../data-access/survey-page-repository";
 import * as surveyResponseRepository from "../data-access/survey-response-repository";
 import * as questionRepository from "../data-access/question-repository";
-import * as collectorRepository from "../../collectors/data-access/collectors.repository";
+import * as collectorRepository from "@/app/collectors/data-access/collectors.repository";
 import { validateNewSurvey } from "./validators";
 import {
   HttpStatusCode,
   OrderByObject,
   SurveyCollectorsDTO,
   SurveyStatus,
-} from "../../../types/types";
-import { AppError } from "../../../lib/error-handling";
+} from "@/types/types";
+import { AppError } from "@/lib/error-handling";
 
 export const getSurvey = async (surveyId: string) => {
   return await surveyRepository.getSurveyById(surveyId);

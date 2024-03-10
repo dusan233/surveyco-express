@@ -1,7 +1,7 @@
 import formidable from "formidable";
-import { AppError } from "../../../lib/error-handling";
+import { AppError } from "@/lib/error-handling";
 import { promises as fs } from "fs";
-import { HttpStatusCode } from "../../../types/types";
+import { HttpStatusCode } from "@/types/types";
 import { v4 as uuid4 } from "uuid";
 import { uploadMediaToS3 } from "./upload-media-service";
 

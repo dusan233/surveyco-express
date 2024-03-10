@@ -1,11 +1,10 @@
 import { Question, QuestionOption, SurveyPage } from "@prisma/client";
-import { AppError } from "../../../lib/error-handling";
+import { AppError } from "@/lib/error-handling";
 import {
-  CreateSurveyData,
   HttpStatusCode,
   QuestionType,
   SaveSurveyResponseData,
-} from "../../../types/types";
+} from "@/types/types";
 import { SurveyRecord } from "../data-access/survey-repository";
 import {
   createQuestionSchema,

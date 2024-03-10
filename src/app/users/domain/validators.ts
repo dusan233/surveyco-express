@@ -1,5 +1,5 @@
-import { AppError } from "../../../lib/error-handling";
-import { HttpStatusCode } from "../../../types/types";
+import { AppError } from "@/lib/error-handling";
+import { HttpStatusCode } from "@/types/types";
 import { userSurveysQueryParamsSchema } from "./schema-validation";
 
 export const validateUserSurveysQueryParams = (queryParams: {

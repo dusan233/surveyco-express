@@ -1,5 +1,5 @@
-import { UserSurveysDTO } from "../../../types/types";
-import * as surveyRepository from "../../quizzes/data-access/survey-repository";
+import { UserSurveysDTO } from "@/types/types";
+import * as surveyRepository from "@/app/quizzes/data-access/survey-repository";
 
 export const getUserSurveys = async (
   userId: string,

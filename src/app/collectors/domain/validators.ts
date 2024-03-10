@@ -1,12 +1,6 @@
-import { AppError } from "../../../lib/error-handling";
-import {
-  CollectrorRecord,
-  CreateCollectorData,
-  HttpStatusCode,
-  UpdateCollectorNameData,
-  UpdateCollectorStatusData,
-} from "../../../types/types";
-import { SurveyRecord } from "../../quizzes/data-access/survey-repository";
+import { AppError } from "@/lib/error-handling";
+import { CollectrorRecord, HttpStatusCode } from "@/types/types";
+import { SurveyRecord } from "@/app/quizzes/data-access/survey-repository";
 import {
   createSurveyCollectorSchema,
   updateSurveyCollectorSchema,

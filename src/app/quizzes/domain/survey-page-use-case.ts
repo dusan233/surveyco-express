@@ -1,5 +1,5 @@
-import { AppError } from "../../../lib/error-handling";
-import { HttpStatusCode, PlacePageDTO } from "../../../types/types";
+import { AppError } from "@/lib/error-handling";
+import { HttpStatusCode, PlacePageDTO } from "@/types/types";
 import * as surveyPageRepository from "../data-access/survey-page-repository";
 import * as surveyRepository from "../data-access/survey-repository";
 import {

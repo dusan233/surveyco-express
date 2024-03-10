@@ -4,13 +4,13 @@ import {
   validateUpdateCollectorName,
   validateUpdateCollectorStatus,
 } from "./validators";
-import * as surveyRepository from "../../quizzes/data-access/survey-repository";
+import * as surveyRepository from "@/app/quizzes/data-access/survey-repository";
 import * as collectorRepository from "../data-access/collectors.repository";
 import {
   assertSurveyExists,
   assertUserCreatedSurvey,
-} from "../../quizzes/domain/validators";
-import { UpdateCollectorDTO } from "../../../types/types";
+} from "@/app/quizzes/domain/validators";
+import { UpdateCollectorDTO } from "@/types/types";
 
 export const createSurveyCollector = async (
   collectorData: unknown,

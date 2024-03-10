@@ -1,4 +1,4 @@
-import { AppError, errorHandler } from "./lib/error-handling";
+import { AppError, errorHandler } from "@/lib/error-handling";
 import { startWebServer } from "./server";
 
 startWebServer()

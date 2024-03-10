@@ -1,4 +1,4 @@
-import prisma from "../../../prismaClient";
+import prisma from "@/prismaClient";
 
 export const getChoiceCountPerQuestion = async (questionIds: string[]) => {
   return await prisma.questionAnswer.groupBy({

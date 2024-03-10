@@ -1,4 +1,4 @@
-import { HttpStatusCode } from "../../types/types";
+import { HttpStatusCode } from "@/types/types";
 import * as Http from "http";
 import * as util from "util";
 import { Response } from "express";

@@ -1,6 +1,6 @@
-import { HttpStatusCode, UserParams } from "../../../types/types";
+import { HttpStatusCode, UserParams } from "@/types/types";
 import { Request, Response } from "express";
-import { AppError } from "../../../lib/error-handling";
+import { AppError } from "@/lib/error-handling";
 import { validateUserSurveysQueryParams } from "../domain/validators";
 import * as userUseCase from "../domain/user-use-case";
 

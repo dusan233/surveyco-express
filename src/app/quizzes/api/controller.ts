@@ -8,18 +8,18 @@ import {
   SurveyPageParams,
   SurveyParams,
   SurveyQuestionParams,
-} from "../../../types/types";
-import { AppError as AppErr } from "../../../lib/error-handling/index";
+} from "@/types/types";
+import { AppError as AppErr } from "@/lib/error-handling/index";
 import {
   getBlockedCollectorsFromCookies,
   getSavedSurveyResponsesFromCookies,
   randomizeArray,
   setBlockedCollectorsCookie,
   setSurveyResponseDataCookie,
-} from "../../../lib/utils";
+} from "@/lib/utils";
 import * as surveyUseCase from "../domain/survey-use-case";
 import * as surveyResponseUseCase from "../domain/survey-response-use-case";
-import * as collectorUseCase from "../../collectors/domain/collector-use-case";
+import * as collectorUseCase from "@/app/collectors/domain/collector-use-case";
 import * as surveyPageUseCase from "../domain/survey-page-use-case";
 import * as surveyQuestionUseCase from "../domain/survey-question-use-case";
 import * as questionRsponseRepository from "../data-access/question-response-repository";
@@ -38,7 +38,7 @@ import {
 import {
   assertCollectorBelongsToSurvey,
   assertCollectorExists,
-} from "../../collectors/domain/validators";
+} from "@/app/collectors/domain/validators";
 
 const createSurveyHandler = async (req: Request, res: Response) => {
   const userId = req.auth.userId;

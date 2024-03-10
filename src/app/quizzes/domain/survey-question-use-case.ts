@@ -17,7 +17,7 @@ import {
   PlaceQuestionDTO,
   QuestionType,
   UpdateQuestionDTO,
-} from "../../../types/types";
+} from "@/types/types";
 
 export const getQuestions = async (pageId: string) => {
   return await questionRepository.getQuestionsByPageId(pageId);
