@@ -22,11 +22,11 @@ async function startWebServer(): Promise<AddressInfo> {
 
   app.set("trust proxy", true);
 
-  app.use(cookieParser("secrekey1239dkfsak00010"));
+  app.use(cookieParser(config.get("cookieParser.secretKey")));
   app.use(
     cors({
       credentials: true,
-      origin: ["http://localhost:3000", "http://localhost:5173"],
+      origin: [config.get("client.frontendUrl")],
       optionsSuccessStatus: 200,
     })
   );

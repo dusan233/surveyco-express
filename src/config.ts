@@ -7,6 +7,22 @@ const config = convict({
     default: "development",
     env: "NODE_ENV",
   },
+  client: {
+    frontendUrl: {
+      doc: "Frontend client url address",
+      format: String,
+      default: "http://localhost:3000",
+      env: "FRONTEND_URL",
+    },
+  },
+  cookieParser: {
+    secretKey: {
+      doc: "Cookie parser secret key",
+      format: String,
+      default: "secret-keyy",
+      enf: "COOKIE_PARSER_SECRET",
+    },
+  },
   clerkAuth: {
     secretKey: {
       doc: "Secret clerk key",
@@ -45,13 +61,13 @@ const config = convict({
     region: {
       doc: "AWS S3 region",
       format: String,
-      default: "eu-central-1",
+      default: "",
       env: "AWS_REGION",
     },
     bucketname: {
       doc: "AWS S3 bucketname",
       format: String,
-      default: "surveyco-survey-files",
+      default: "",
       env: "AWS_BUCKETNAME",
     },
   },
