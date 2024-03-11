@@ -1,15 +1,14 @@
-import { AddressInfo } from "net";
+import { AddressInfo } from "node:net";
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import appRouter from "./appRouter";
-import path from "path";
 import bodyParser from "body-parser";
 import { Webhook } from "svix";
 import { WebhookEvent } from "@clerk/clerk-sdk-node";
 import prisma from "./prismaClient";
 import { errorHandler } from "./lib/error-handling";
-import { Server } from "http";
+import { Server } from "node:http";
 import "./global-express";
 import config from "./config";
 import helmet from "helmet";
@@ -33,7 +32,6 @@ async function startWebServer(): Promise<AddressInfo> {
   );
   app.use(helmet());
   app.use(express.json({ limit: "300kb" }));
-  app.use(express.static(path.join(__dirname, "public")));
 
   app.use(appRouter, rateLimiter);
 
@@ -48,20 +46,20 @@ async function startWebServer(): Promise<AddressInfo> {
 
         const wh = new Webhook(config.get("clerkAuth.webhookSecretKey"));
 
-        const evt = wh.verify(payload, headers) as WebhookEvent;
+        const event_ = wh.verify(payload, headers) as WebhookEvent;
 
-        const eventType = evt.type;
+        const eventType = event_.type;
         if (eventType === "user.created") {
           //add to database data about user.
           await prisma.user.create({
             data: {
-              id: evt.data.id,
-              email: evt.data.email_addresses[0].email_address,
-              created_at: new Date(evt.data.created_at),
-              updated_at: new Date(evt.data.created_at),
-              last_sign_in_at: new Date(evt.data.last_sign_in_at || 0),
-              first_name: evt.data.first_name,
-              last_name: evt.data.last_name,
+              id: event_.data.id,
+              email: event_.data.email_addresses[0].email_address,
+              created_at: new Date(event_.data.created_at),
+              updated_at: new Date(event_.data.created_at),
+              last_sign_in_at: new Date(event_.data.last_sign_in_at || 0),
+              first_name: event_.data.first_name,
+              last_name: event_.data.last_name,
             },
           });
           console.log("korisnik kreiran");
@@ -74,8 +72,8 @@ async function startWebServer(): Promise<AddressInfo> {
           success: true,
           message: "Webhook received",
         });
-      } catch (err) {
-        console.log(err);
+      } catch (error) {
+        console.log(error);
         res.status(400).json({
           success: false,
           message: "webhook error msg",
