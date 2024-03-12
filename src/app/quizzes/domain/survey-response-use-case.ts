@@ -20,6 +20,7 @@ import * as collectorRepository from "@/app/collectors/data-access/collectors.re
 import {
   assertCollectorBelongsToSurvey,
   assertCollectorExists,
+  assertCollectorIsOpen,
 } from "@/app/collectors/domain/validators";
 import { checkForSurveyUpdated } from "./survey-use-case";
 
@@ -120,6 +121,7 @@ export const saveSurveyResponse = async (
   );
   assertCollectorExists(collector);
   assertCollectorBelongsToSurvey(survey!, collector!);
+  assertCollectorIsOpen(collector!);
 
   const saveResponseData = {
     data: validatedData,

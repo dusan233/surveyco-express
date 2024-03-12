@@ -1,5 +1,9 @@
 import { AppError } from "@/lib/error-handling";
-import { CollectrorRecord, HttpStatusCode } from "@/types/types";
+import {
+  CollectorStatus,
+  CollectrorRecord,
+  HttpStatusCode,
+} from "@/types/types";
 import { SurveyRecord } from "@/app/quizzes/data-access/survey-repository";
 import {
   createSurveyCollectorSchema,
@@ -27,6 +31,16 @@ export const assertCollectorExists = (collector: CollectrorRecord | null) => {
       "NotFound",
       "Resource not found.",
       HttpStatusCode.NOT_FOUND,
+      true
+    );
+};
+
+export const assertCollectorIsOpen = (collector: CollectrorRecord) => {
+  if (collector.status !== CollectorStatus.open)
+    throw new AppError(
+      "BadRequest",
+      "Invalid inputs.",
+      HttpStatusCode.BAD_REQUEST,
       true
     );
 };
