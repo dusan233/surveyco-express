@@ -202,43 +202,6 @@ const createSurveyPageHandler = async (
   return res.status(HttpStatusCode.CREATED).json(createdPage);
 };
 
-// const getSurveyResponseQuestionResponsesHandler = async (
-//   req: Request<CollectorParams, any, SurveyResponseQuestionResponsesBody>,
-//   res: Response
-// ) => {
-//   const surveyId = req.params.surveyId;
-//   const collectorId = req.params.collectorId;
-//   const questionsIds = req.body.questionsIds;
-
-//   if (req.cookies && req.cookies.surveResponses) {
-//     const surveyResponses: {
-//       id: string;
-//       surveyId: string;
-//       collectorId: string;
-//       submitted: boolean;
-//     }[] = JSON.parse(req.cookies.surveyResponses);
-
-//     const responseExists = surveyResponses.find(
-//       (response) =>
-//         response.surveyId === surveyId && collectorId === response.collectorId
-//     );
-
-//     if (responseExists) {
-//       const questionResponses =
-//         await questionResponseUseCase.getQuestionResponses(
-//           responseExists.id,
-//           questionsIds
-//         );
-
-//       return res.status(HttpStatusCode.OK).json(questionResponses);
-//     }
-
-//     return res.status(HttpStatusCode.OK).json([]);
-//   }
-
-//   return res.status(HttpStatusCode.OK).json([]);
-// };
-
 const saveSurveyResponseHandler = async (
   req: Request<SurveyParams>,
   res: Response
