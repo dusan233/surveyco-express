@@ -24,7 +24,11 @@ export const getQuestionsByPageId = async (pageId: string) => {
     },
     orderBy: { number: "asc" },
     include: {
-      options: true,
+      options: {
+        orderBy: {
+          number: "asc",
+        },
+      },
     },
   });
 
@@ -118,8 +122,10 @@ export const updateQuestion = async (updateQuestion: UpdateQuestionDTO) => {
         });
       }
 
+      console.log(updateQuestion.data.options);
+
       const updatedQuestion = await tx.question.update({
-        include: { options: true },
+        include: { options: { orderBy: { number: "asc" } } },
         where: { id: updateQuestion.data.id },
         data: {
           description: updateQuestion.data.description,

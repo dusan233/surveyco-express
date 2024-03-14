@@ -171,7 +171,9 @@ const createQuestionHandler = async (
     userId,
   });
 
-  return res.status(HttpStatusCode.CREATED).json(createdQuestion);
+  return res
+    .status(HttpStatusCode.CREATED)
+    .json({ ...createdQuestion, hasResponses: false });
 };
 
 const deleteSurveyQuestionHandler = async (
