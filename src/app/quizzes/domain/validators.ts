@@ -173,6 +173,25 @@ export const assertQuestionBelongsToSurvey = (
       true
     );
 };
+
+export const isTextboxQuestionResponseValid = (
+  questionResponse: {
+    questionId: string;
+    answer: (string | string[]) & (string | string[] | undefined);
+    questionType: QuestionType;
+    id?: string | undefined;
+  },
+  question: Question
+) => {
+  let isValid = true;
+
+  if (question.required) {
+    isValid = (questionResponse.answer as string).trim() !== "";
+  }
+
+  return isValid;
+};
+
 export const isMultichoiceQuestionResponseValid = (
   questionResponse: {
     questionId: string;
@@ -198,24 +217,6 @@ export const isMultichoiceQuestionResponseValid = (
   return isValid;
 };
 
-export const isTextboxQuestionResponseValid = (
-  questionResponse: {
-    questionId: string;
-    answer: (string | string[]) & (string | string[] | undefined);
-    questionType: QuestionType;
-    id?: string | undefined;
-  },
-  question: Question
-) => {
-  let isValid = true;
-
-  if (question.required) {
-    isValid = (questionResponse.answer as string).trim() !== "";
-  }
-
-  return isValid;
-};
-
 export const isCheckboxQuestionResponseValid = (
   questionResponse: {
     questionId: string;
@@ -228,12 +229,26 @@ export const isCheckboxQuestionResponseValid = (
   let isValid = true;
   if (question.required) {
     isValid = false;
-    (questionResponse.answer as string[]).forEach((answer) => {
+
+    if ((questionResponse.answer as string[]).length === 0) return;
+
+    const validAnswers = (questionResponse.answer as string[]).map((answer) => {
       if (question.options!.map((option) => option.id).includes(answer))
-        isValid = true;
+        return true;
+
+      return false;
     });
+
+    isValid = !validAnswers.includes(false);
   } else {
-    return;
+    const validAnswers = (questionResponse.answer as string[]).map((answer) => {
+      if (question.options!.map((option) => option.id).includes(answer))
+        return true;
+
+      return false;
+    });
+
+    isValid = !validAnswers.includes(false);
   }
 
   return isValid;
