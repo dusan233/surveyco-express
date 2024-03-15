@@ -20,8 +20,6 @@ async function startWebServer(): Promise<AddressInfo> {
 
   const app = express();
 
-  app.set("trust proxy", true);
-
   app.use(cookieParser(config.get("cookieParser.secretKey")));
   app.use(
     cors({
