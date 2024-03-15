@@ -47,9 +47,10 @@ async function startWebServer(): Promise<AddressInfo> {
         const wh = new Webhook(config.get("clerkAuth.webhookSecretKey"));
 
         const event_ = wh.verify(payload, headers) as WebhookEvent;
-
+        console.log("dwdw");
         const eventType = event_.type;
         if (eventType === "user.created") {
+          console.log("dwdw");
           //add to database data about user.
           await prisma.user.create({
             data: {
