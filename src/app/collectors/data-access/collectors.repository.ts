@@ -44,6 +44,9 @@ export const getCollectorById = async (
 ): Promise<CollectrorRecord | null> => {
   const collector = await prisma.surveyCollector.findUnique({
     where: { id: collectorId },
+    include: {
+      survey: true,
+    },
   });
 
   return collector;
