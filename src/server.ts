@@ -90,7 +90,7 @@ async function openConnection(
   expressApp: express.Application
 ): Promise<AddressInfo> {
   return new Promise((resolve) => {
-    const webServerPort = 8080;
+    const webServerPort = process.env.PORT || 8080;
 
     connection = expressApp.listen(webServerPort, () => {
       errorHandler.listenToErrorEvents(connection);
