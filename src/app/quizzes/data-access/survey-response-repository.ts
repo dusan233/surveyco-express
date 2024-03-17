@@ -1,9 +1,9 @@
-import prisma from "@/prismaClient";
+import prisma from "../../../prismaClient";
 import {
   OrderByObject,
   QuestionType,
   SaveSurveyResponseDTO,
-} from "@/types/types";
+} from "../../../types/types";
 
 export const getSurveyResponse = async (
   responseId: string,

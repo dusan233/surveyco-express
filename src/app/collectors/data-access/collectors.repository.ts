@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import prisma from "@/prismaClient";
+import prisma from "../../../prismaClient";
 import {
   CollectorStatus,
   CollectorType,
@@ -7,7 +7,7 @@ import {
   CreateCollectorData,
   OrderByObject,
   UpdateCollectorDTO,
-} from "@/types/types";
+} from "../../../types/types";
 
 export const getCollectorCountBySurveyId = async (surveyId: string) => {
   return await prisma.surveyCollector.count({ where: { surveyId } });

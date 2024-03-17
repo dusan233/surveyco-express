@@ -1,5 +1,5 @@
-import prisma from "@/prismaClient";
-import { CreateSurveyDTO, OrderByObject } from "@/types/types";
+import prisma from "../../../prismaClient";
+import { CreateSurveyDTO, OrderByObject } from "../../../types/types";
 
 export type SurveyRecord = {
   id: string;

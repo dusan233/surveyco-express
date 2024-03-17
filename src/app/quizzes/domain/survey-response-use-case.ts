@@ -5,7 +5,7 @@ import {
   OrderByObject,
   SaveSurveyResponseData,
   SurveyResponsesDTO,
-} from "@/types/types";
+} from "../../../types/types";
 import {
   assertPageBelongsToSurvey,
   assertPageExists,
@@ -16,12 +16,12 @@ import {
 import * as surveyPageRepository from "../data-access/survey-page-repository";
 import * as surveyRepository from "../data-access/survey-repository";
 import * as questionRepository from "../data-access/question-repository";
-import * as collectorRepository from "@/app/collectors/data-access/collectors.repository";
+import * as collectorRepository from "../../../app/collectors/data-access/collectors.repository";
 import {
   assertCollectorBelongsToSurvey,
   assertCollectorExists,
   assertCollectorIsOpen,
-} from "@/app/collectors/domain/validators";
+} from "../../../app/collectors/domain/validators";
 import { checkForSurveyUpdated } from "./survey-use-case";
 
 export const getSurveyResponseVolume = async (surveyId: string) => {

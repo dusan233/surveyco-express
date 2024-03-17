@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import prisma from "@/prismaClient";
+import prisma from "../../../prismaClient";
 import {
   CreateQuestionDTO,
   HttpStatusCode,
@@ -7,7 +7,7 @@ import {
   PlaceQuestionDTO,
   QuestionType,
   UpdateQuestionDTO,
-} from "@/types/types";
+} from "../../../types/types";
 import { assertMaxQuestionsPerPageNotExceeded } from "../domain/survey-page-validators";
 import {
   assertPageBelongsToSurvey,
@@ -15,7 +15,7 @@ import {
   assertQuestionBelongsToSurvey,
   assertQuestionExists,
 } from "../domain/validators";
-import { AppError } from "@/lib/error-handling";
+import { AppError } from "../../../lib/error-handling";
 
 export const getQuestionsByPageId = async (pageId: string) => {
   const questions = await prisma.question.findMany({

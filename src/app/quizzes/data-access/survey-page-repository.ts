@@ -1,7 +1,11 @@
 import { Prisma } from "@prisma/client";
-import prisma from "@/prismaClient";
+import prisma from "../../../prismaClient";
 import { assertPageExists } from "../domain/validators";
-import { OperationPosition, PlacePageDTO, QuestionType } from "@/types/types";
+import {
+  OperationPosition,
+  PlacePageDTO,
+  QuestionType,
+} from "../../../types/types";
 import { assertMaxPagesNotExceeded } from "../domain/survey-page-validators";
 
 export const getSurveyPages = async (surveyId: string) => {

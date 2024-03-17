@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { OperationPosition, QuestionType, SurveyCategory } from "@/types/types";
+import {
+  OperationPosition,
+  QuestionType,
+  SurveyCategory,
+} from "../../../types/types";
 
 export const placePageSchema = z.object({
   position: z.nativeEnum(OperationPosition),

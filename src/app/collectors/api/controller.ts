@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { CollectorParams, HttpStatusCode } from "@/types/types";
-import { AppError as AppErr } from "@/lib/error-handling/index";
+import { CollectorParams, HttpStatusCode } from "../../../types/types";
+import { AppError as AppErr } from "../../../lib/error-handling/index";
 import * as collectorUseCase from "../domain/collector-use-case";
 
 const createSurveyCollectorHandler = async (req: Request, res: Response) => {

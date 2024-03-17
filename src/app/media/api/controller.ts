@@ -1,9 +1,9 @@
 import formidable from "formidable";
 import { Request, Response } from "express";
-import { HttpStatusCode } from "@/types/types";
-import * as surveyUseCase from "@/app/quizzes/domain/survey-use-case";
-import { AppError } from "@/lib/error-handling";
-import { assertSurveyExists } from "@/app/quizzes/domain/validators";
+import { HttpStatusCode } from "../../../types/types";
+import * as surveyUseCase from "../../../app/quizzes/domain/survey-use-case";
+import { AppError } from "../../../lib/error-handling";
+import { assertSurveyExists } from "../../../app/quizzes/domain/validators";
 import { uploadMedia } from "../domain/upload-media-use-case";
 
 const uploadMediaHandler = async (

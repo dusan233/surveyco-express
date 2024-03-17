@@ -4,7 +4,6 @@ import { rateLimit } from "express-rate-limit";
 export const asyncHandler =
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
-
     (function_: any) =>
     (request: Request, response: Response, next: NextFunction) => {
       Promise.resolve(function_(request, response, next)).catch(next);

@@ -1,6 +1,6 @@
 import { ClerkExpressRequireAuth } from "@clerk/clerk-sdk-node";
 import express from "express";
-import { asyncHandler } from "@/lib/middlewares";
+import { asyncHandler } from "../../../lib/middlewares";
 
 import quizController from "./controller";
 
