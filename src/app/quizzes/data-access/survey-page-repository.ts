@@ -465,7 +465,7 @@ export const createSurveyPage = async (surveyId: string) => {
       const createdPage = await tx.surveyPage.create({
         data: {
           number:
-            (await prisma.surveyPage.count({
+            (await tx.surveyPage.count({
               where: { survey: { id: surveyId } },
             })) + 1,
           survey: {
