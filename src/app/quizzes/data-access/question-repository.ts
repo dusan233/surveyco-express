@@ -582,8 +582,9 @@ export const addQuestion = async (createQuestion: CreateQuestionDTO) => {
             orderBy: { number: "desc" },
           });
           newQuestionNumber = questionBeforeNewQuestion!.number + 1;
+        } else {
+          newQuestionNumber = 1;
         }
-        newQuestionNumber = 1;
       } else {
         const targetSurveyPageLastQuestion = await tx.question.findFirst({
           where: { surveyPage: { id: createQuestion.pageId } },
