@@ -576,13 +576,14 @@ export const addQuestion = async (createQuestion: CreateQuestionDTO) => {
         const firstPageBeforeWithQuestions = pagesWithQuestionCount.find(
           (page) => page._count.questions > 0
         )?.id;
-        const questionBeforeNewQuestion = await tx.question.findFirst({
-          where: { surveyPage: { id: firstPageBeforeWithQuestions } },
-          orderBy: { number: "desc" },
-        });
-        newQuestionNumber = questionBeforeNewQuestion
-          ? questionBeforeNewQuestion?.number + 1
-          : 1;
+        if (firstPageBeforeWithQuestions) {
+          const questionBeforeNewQuestion = await tx.question.findFirst({
+            where: { surveyPage: { id: firstPageBeforeWithQuestions } },
+            orderBy: { number: "desc" },
+          });
+          newQuestionNumber = questionBeforeNewQuestion!.number + 1;
+        }
+        newQuestionNumber = 1;
       } else {
         const targetSurveyPageLastQuestion = await tx.question.findFirst({
           where: { surveyPage: { id: createQuestion.pageId } },
