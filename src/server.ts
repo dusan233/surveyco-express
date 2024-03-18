@@ -107,7 +107,9 @@ function defineErrorHandlingMiddleware(expressApp: express.Application) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       error: any,
       req: express.Request,
-      res: express.Response
+      res: express.Response,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      next: express.NextFunction
     ) => {
       if (error && typeof error === "object") {
         if (error.isTrusted === undefined || error.isTrusted === null) {
