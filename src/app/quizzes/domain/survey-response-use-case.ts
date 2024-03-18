@@ -93,6 +93,12 @@ export const saveSurveyResponse = async (
 
   assertPageExists(page);
   assertPageBelongsToSurvey(page!, surveyId);
+
+  await checkForSurveyUpdated(
+    surveyId,
+    surveyResponseData.surveyResposneStartTime
+  );
+
   assertQuestionResponsesDataIsValid(
     validatedData.questionResponses,
     pageQuestions
@@ -104,11 +110,6 @@ export const saveSurveyResponse = async (
   // make sure all required qeustions are answered before submit complete
   // if (submitting && surveyPages.length >= 2) {
   // }
-
-  await checkForSurveyUpdated(
-    surveyId,
-    surveyResponseData.surveyResposneStartTime
-  );
 
   if (surveyResponseData.isPreview)
     return {
