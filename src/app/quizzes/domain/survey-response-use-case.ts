@@ -71,7 +71,7 @@ export const getSurveyResponseVolume = async (surveyId: string) => {
     // Move to the next day
     startDate.setDate(startDate.getDate() + 1);
   }
-
+  console.log(dateObjects);
   return dateObjects;
 };
 
