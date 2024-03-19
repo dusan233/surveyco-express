@@ -36,11 +36,15 @@ export const getSurveyResponseVolume = async (surveyId: string) => {
       tenDaysAgo.toISOString(),
       currentDate.toISOString()
     );
+  console.log(surveyResponseCountPerDay, "surveyResponseCountPerDay");
 
   const dateObjects = [];
   const startDate = new Date(tenDaysAgo);
   const endDate = new Date(currentDate);
+  console.log(startDate, "startDate");
+  console.log(endDate, "endDate");
 
+  console.log("while begins!!!!!!");
   while (startDate <= endDate) {
     const day = format(startDate, "yyyy-MM-dd");
     const startDayDate = new Date(day);
@@ -53,7 +57,11 @@ export const getSurveyResponseVolume = async (surveyId: string) => {
     endDayDate.setUTCMilliseconds(999);
 
     // Subtract 1 millisecond to get the end of the previous day
-
+    console.log(
+      startDayDate,
+      endDayDate,
+      "while start end for each of 10 days"
+    );
     let responseCount = 0;
     surveyResponseCountPerDay.forEach((resCount) => {
       if (
@@ -71,6 +79,7 @@ export const getSurveyResponseVolume = async (surveyId: string) => {
     // Move to the next day
     startDate.setDate(startDate.getDate() + 1);
   }
+  console.log("while ends!!!!!!");
   console.log(dateObjects);
   return dateObjects;
 };
