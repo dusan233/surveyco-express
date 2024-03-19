@@ -26,6 +26,7 @@ import { checkForSurveyUpdated } from "./survey-use-case";
 
 export const getSurveyResponseVolume = async (surveyId: string) => {
   const currentDate = new Date();
+  console.log(currentDate);
   const tenDaysAgo = new Date(currentDate);
   tenDaysAgo.setDate(currentDate.getDate() - 10);
 
