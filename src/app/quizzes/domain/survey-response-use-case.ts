@@ -134,6 +134,9 @@ export const saveSurveyResponse = async (
   assertCollectorBelongsToSurvey(survey!, collector!);
   assertCollectorIsOpen(collector!);
 
+  console.log(submitting, "is last page");
+  console.log(validatedData, "validated req.body data");
+
   const saveResponseData = {
     data: validatedData,
     collectorId: validatedData.collectorId!,

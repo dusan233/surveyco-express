@@ -231,6 +231,8 @@ const saveSurveyResponseHandler = async (
     const surveyResponses = getSavedSurveyResponsesFromCookies(
       req.signedCookies
     );
+    console.log(blockedCollectorIds, "bloc_col cookie");
+    console.log(surveyResponses, "surveyResponses cookie");
     assertCollectorNotFinished(blockedCollectorIds, collectorId ?? "");
 
     const responseExists = surveyResponses.find(
@@ -238,12 +240,16 @@ const saveSurveyResponseHandler = async (
         surveyRes.collectorId === collectorId && surveyRes.surveyId === surveyId
     );
 
+    console.log(responseExists, "saved response with");
+    console.log("start save response");
     const surveyResponse = await surveyResponseUseCase.saveSurveyResponse(
       validatedData,
       responderIPAddress,
       responseExists?.id ?? null,
       surveyId
     );
+    console.log(surveyResponse, "survey response data");
+    console.log("finish save Response");
     const submit = surveyResponse.status === "complete";
 
     if (surveyResponse.id !== "preview") {
