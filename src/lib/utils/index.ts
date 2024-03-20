@@ -29,7 +29,7 @@ export const setSurveyResponseDataCookie = (
   }[]
 ) => {
   res.cookie("surveyResponses", JSON.stringify(surveyResponsesData), {
-    secure: process.env.NODE_ENV === "production" ? true : false,
+    secure: true,
     httpOnly: true,
     maxAge: 30 * 24 * 60 * 60 * 1000,
     signed: true,
@@ -41,7 +41,7 @@ export const setBlockedCollectorsCookie = (
   blockedCollectors: string[]
 ) => {
   res.cookie("blocked_col", JSON.stringify(blockedCollectors), {
-    secure: process.env.NODE_ENV === "production" ? true : false,
+    secure: true,
     httpOnly: true,
     maxAge: 30 * 24 * 60 * 60 * 1000 * 24,
   });
