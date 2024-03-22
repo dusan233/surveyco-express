@@ -225,9 +225,7 @@ const saveSurveyResponseHandler = async (
 
     return res.status(HttpStatusCode.ACCEPTED).json({ submitted: submit });
   } else {
-    const blockedCollectorIds = getBlockedCollectorsFromCookies(
-      req.signedCookies
-    );
+    const blockedCollectorIds = getBlockedCollectorsFromCookies(req.cookies);
     const surveyResponses = getSavedSurveyResponsesFromCookies(
       req.signedCookies
     );
@@ -310,7 +308,7 @@ const getSurveyQuestionsAndResponsesHandler = async (
   assertCollectorExists(collector);
   assertCollectorBelongsToSurvey(survey!, collector!);
   //if survey/collector bond already submitted throw
-  const blockedCollectors = getBlockedCollectorsFromCookies(req.signedCookies);
+  const blockedCollectors = getBlockedCollectorsFromCookies(req.cookies);
   assertCollectorNotFinished(blockedCollectors, collectorId);
 
   const previousResponses = getSavedSurveyResponsesFromCookies(
