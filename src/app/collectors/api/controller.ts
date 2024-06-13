@@ -37,9 +37,12 @@ const deleteCollectorHandler = async (
   const userId = req.auth.userId;
   const collectorId = req.params.collectorId;
 
-  await collectorUseCase.deleteSurveyCollector(collectorId, userId);
+  const collector = await collectorUseCase.deleteSurveyCollector(
+    collectorId,
+    userId
+  );
 
-  return res.sendStatus(HttpStatusCode.NO_CONTENT);
+  return res.status(HttpStatusCode.OK).json(collector);
 };
 
 const updateSurveyCollectorHandler = async (

@@ -184,9 +184,13 @@ const deleteSurveyQuestionHandler = async (
   const questionId = req.params.questionId;
   const userId = req.auth.userId;
 
-  await surveyQuestionUseCase.deleteQuestion({ questionId, surveyId, userId });
+  const question = await surveyQuestionUseCase.deleteQuestion({
+    questionId,
+    surveyId,
+    userId,
+  });
 
-  return res.sendStatus(HttpStatusCode.NO_CONTENT);
+  return res.status(HttpStatusCode.OK).json(question);
 };
 
 const createSurveyPageHandler = async (
@@ -526,8 +530,12 @@ const deleteSurveyPageHandler = async (
   const pageId = req.params.pageId;
   const userId = req.auth.userId;
 
-  await surveyPageUseCase.deleteSurveyPage({ pageId, surveyId, userId });
-  return res.sendStatus(HttpStatusCode.NO_CONTENT);
+  const page = await surveyPageUseCase.deleteSurveyPage({
+    pageId,
+    surveyId,
+    userId,
+  });
+  return res.status(HttpStatusCode.OK).json(page);
 };
 
 const copySurveyPageHandler = async (
